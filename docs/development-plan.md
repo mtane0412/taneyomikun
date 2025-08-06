@@ -11,13 +11,26 @@
 
 ## 開発フェーズ
 
-### フェーズ1: 基盤構築（優先度: 高）
+### フェーズ1: 基盤構築（優先度: 高）✅ 完了
 
-#### 1. プロジェクトセットアップ
-- Tauri + Vite環境の構築
-- TypeScript設定
-- ESLint/Prettier設定
-- 基本的なプロジェクト構造の確立
+#### 1. プロジェクトセットアップ ✅ 完了 (2025-08-06)
+- ✅ Tauri + Vite環境の構築
+  - Tauri v2 + React + TypeScript環境をセットアップ
+  - Vite設定ファイル作成（vite.config.ts）
+  - package.jsonにスクリプト追加
+- ✅ TypeScript設定
+  - tsconfig.json作成（React + Tauri用）
+  - tsconfig.node.json作成（Vite用）
+  - 型定義パッケージインストール済み
+- ✅ ESLint/Prettier設定
+  - ESLint v9形式の設定ファイル作成（eslint.config.js）
+  - Prettier設定ファイル作成（.prettierrc）
+  - lint/formatスクリプト追加
+- ✅ 基本的なプロジェクト構造の確立
+  - src/ディレクトリ構造作成（components, hooks, stores, utils）
+  - src-tauri/ディレクトリ構造作成（commands, tts, config）
+  - 基本的なReactアプリケーション作成（App.tsx, main.tsx）
+  - Rustプロジェクト初期化（Cargo.toml, main.rs, lib.rs）
 
 #### 2. 基本的なUIデザインと実装
 - **メインウィンドウ**
@@ -127,10 +140,19 @@ taneyomikun/
 
 ## 開発スケジュール目安
 
-- **週1-2**: フェーズ1完了（基本機能の実装）
+- **週1-2**: フェーズ1完了（基本機能の実装）✅ 2025-08-06 完了
 - **週3-4**: フェーズ2完了（機能拡張）
 - **週5**: フェーズ3完了（応用機能）
 - **週6**: フェーズ4完了（品質保証とリリース準備）
+
+## 進捗ログ
+
+### 2025-08-06
+- フェーズ1を完了
+- Tauri v2 + React + TypeScript環境のセットアップ完了
+- プロジェクト構造の確立
+- ESLint/Prettier設定完了
+- 基本的なReactアプリケーション（タネヨミくん）のUIを作成
 
 ## リリース計画
 
