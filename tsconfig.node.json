@@ -1,0 +1,14 @@
+/**
+ * Node.js環境用TypeScript設定ファイル
+ * Vite設定ファイル用の設定
+**/
+{
+  "compilerOptions": {
+    "composite": true,
+    "skipLibCheck": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true
+  },
+  "include": ["vite.config.ts"]
+}
