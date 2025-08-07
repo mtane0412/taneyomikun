@@ -84,7 +84,7 @@ impl CartesiaClient {
 
         let request = TTSRequest {
             context_id: uuid::Uuid::new_v4().to_string(),
-            model_id: "sonic-multilingual".to_string(),
+            model_id: self.config.model_id.clone(),
             transcript: text.to_string(),
             voice: VoiceConfig {
                 mode: "id".to_string(),

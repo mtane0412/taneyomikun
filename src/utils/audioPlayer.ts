@@ -7,8 +7,9 @@
 
 // デバッグログの有効化
 const DEBUG = true
-const log = (...args: any[]) => DEBUG && console.log('[AudioPlayer]', ...args)
-const error = (...args: any[]) => console.error('[AudioPlayer]', ...args)
+const log = (...args: unknown[]) =>
+  DEBUG && console.log('[AudioPlayer]', ...args)
+const error = (...args: unknown[]) => console.error('[AudioPlayer]', ...args)
 
 export class AudioPlayer {
   private audioContext: AudioContext
@@ -27,7 +28,12 @@ export class AudioPlayer {
   constructor() {
     log('Initializing AudioPlayer')
     this.audioContext = new AudioContext()
-    log('AudioContext created, sample rate:', this.audioContext.sampleRate, 'state:', this.audioContext.state)
+    log(
+      'AudioContext created, sample rate:',
+      this.audioContext.sampleRate,
+      'state:',
+      this.audioContext.state,
+    )
     this.gainNode = this.audioContext.createGain()
     this.gainNode.connect(this.audioContext.destination)
     log('Audio pipeline connected')
@@ -38,8 +44,10 @@ export class AudioPlayer {
    */
   async appendAudioChunk(base64Audio: string): Promise<void> {
     this.totalChunksReceived++
-    log(`Received chunk #${this.totalChunksReceived}, base64 length: ${base64Audio.length}`)
-    
+    log(
+      `Received chunk #${this.totalChunksReceived}, base64 length: ${base64Audio.length}`,
+    )
+
     try {
       // Base64をデコード
       const binaryString = atob(base64Audio)
@@ -48,9 +56,11 @@ export class AudioPlayer {
       for (let i = 0; i < len; i++) {
         bytes[i] = binaryString.charCodeAt(i)
       }
-      
+
       this.totalBytesReceived += bytes.length
-      log(`Decoded chunk #${this.totalChunksReceived}, size: ${bytes.length} bytes, total: ${this.totalBytesReceived} bytes`)
+      log(
+        `Decoded chunk #${this.totalChunksReceived}, size: ${bytes.length} bytes, total: ${this.totalBytesReceived} bytes`,
+      )
 
       // PCM f32leをFloat32Arrayに変換
       const floatData = new Float32Array(bytes.buffer)
@@ -83,8 +93,15 @@ export class AudioPlayer {
    * 再生を開始
    */
   play(): void {
-    log('play() called, isPaused:', this.isPaused, 'isPlaying:', this.isPlaying, 'queue length:', this.audioQueue.length)
-    
+    log(
+      'play() called, isPaused:',
+      this.isPaused,
+      'isPlaying:',
+      this.isPlaying,
+      'queue length:',
+      this.audioQueue.length,
+    )
+
     if (this.isPaused) {
       // 一時停止からの再開
       log('Resuming from pause')
@@ -148,12 +165,14 @@ export class AudioPlayer {
       // キューが空になったら再生終了
       if (this.audioQueue.length === 0) {
         log('Queue empty, playback complete')
-        log(`Total stats - Chunks: ${this.totalChunksReceived}, Bytes: ${this.totalBytesReceived}, Buffers played: ${this.totalBuffersPlayed}`)
+        log(
+          `Total stats - Chunks: ${this.totalChunksReceived}, Bytes: ${this.totalBytesReceived}, Buffers played: ${this.totalBuffersPlayed}`,
+        )
         this.isPlaying = false
       }
       return
     }
-    
+
     log(`Scheduling next buffer, queue size: ${this.audioQueue.length}`)
 
     const buffer = this.audioQueue.shift()!
@@ -161,7 +180,9 @@ export class AudioPlayer {
     const source = this.audioContext.createBufferSource()
     source.buffer = buffer
     source.connect(this.gainNode)
-    log(`Playing buffer #${this.totalBuffersPlayed}, duration: ${buffer.duration.toFixed(3)}s`)
+    log(
+      `Playing buffer #${this.totalBuffersPlayed}, duration: ${buffer.duration.toFixed(3)}s`,
+    )
 
     // 次のバッファの再生が終わったら、さらに次をスケジュール
     source.onended = () => {

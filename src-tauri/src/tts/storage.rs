@@ -67,6 +67,7 @@ impl ApiKeyStorage {
         Ok(())
     }
     
+    #[allow(dead_code)]
     pub fn has_api_key() -> bool {
         match Self::get_storage_path() {
             Ok(path) => path.exists(),

@@ -6,6 +6,7 @@
 import { invoke } from '@tauri-apps/api/core'
 
 export interface TTSConfig {
+  model_id: string
   voice_id: string
   speed: number
   volume: number
@@ -28,6 +29,7 @@ export async function updateTTSConfig(
   config: Partial<TTSConfig>,
 ): Promise<void> {
   await invoke('update_tts_config', {
+    modelId: config.model_id,
     voiceId: config.voice_id,
     speed: config.speed,
     volume: config.volume,

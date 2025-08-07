@@ -9,8 +9,8 @@ import { AudioPlayer } from './utils/audioPlayer'
 
 // デバッグログの有効化
 const DEBUG = true
-const log = (...args: any[]) => DEBUG && console.log('[App]', ...args)
-const error = (...args: any[]) => console.error('[App]', ...args)
+const log = (...args: unknown[]) => DEBUG && console.log('[App]', ...args)
+const error = (...args: unknown[]) => console.error('[App]', ...args)
 
 function App() {
   const [text, setText] = useState('')
@@ -20,9 +20,6 @@ function App() {
   const [volume, setVolume] = useState(50)
   const [showSettings, setShowSettings] = useState(false)
   const [apiKey, setApiKey] = useState('')
-  const [selectedVoice, setSelectedVoice] = useState(
-    'a0e99841-438c-4a64-b679-ae501e7d6091',
-  )
   const [speed, setSpeed] = useState(1.0)
   const [hasApiKey, setHasApiKey] = useState(false)
 
@@ -41,14 +38,16 @@ function App() {
     try {
       log('Starting playback')
       setIsPlaying(true)
-      
+
       log('Updating TTS config')
-      await tts.updateTTSConfig({
-        voice_id: selectedVoice,
+      const config = {
+        model_id: 'sonic-2',
+        voice_id: 'fb25b315-dfba-444f-b99d-4c8535672cb7',
         speed,
         volume: volume / 100,
         language: 'ja',
-      })
+      }
+      await tts.updateTTSConfig(config)
 
       // 音声プレイヤーを初期化
       if (!audioPlayerRef.current) {
@@ -123,7 +122,7 @@ function App() {
 
   useEffect(() => {
     log('Component mounted, setting up')
-    
+
     // APIキーの存在確認
     log('Checking API key')
     tts.checkApiKey().then((exists) => {
@@ -137,7 +136,10 @@ function App() {
       const unlistenAudioChunk = await listen<string>(
         'audio-chunk',
         (event) => {
-          log('Received audio-chunk event, payload length:', event.payload.length)
+          log(
+            'Received audio-chunk event, payload length:',
+            event.payload.length,
+          )
           if (audioPlayerRef.current) {
             audioPlayerRef.current.appendAudioChunk(event.payload)
           } else {
@@ -250,12 +252,14 @@ function App() {
             <label htmlFor="api-key">
               Cartesia API キー:
               {hasApiKey && (
-                <span style={{ 
-                  marginLeft: '8px', 
-                  fontSize: '0.9em', 
-                  color: '#4CAF50',
-                  fontWeight: 'normal'
-                }}>
+                <span
+                  style={{
+                    marginLeft: '8px',
+                    fontSize: '0.9em',
+                    color: '#4CAF50',
+                    fontWeight: 'normal',
+                  }}
+                >
                   ✓ 設定済み
                 </span>
               )}
@@ -264,7 +268,9 @@ function App() {
               <input
                 id="api-key"
                 type="password"
-                value={hasApiKey && !apiKey ? '••••••••••••••••••••••••' : apiKey}
+                value={
+                  hasApiKey && !apiKey ? '••••••••••••••••••••••••' : apiKey
+                }
                 onChange={(e) => {
                   const newValue = e.target.value
                   // マスク文字列の場合は編集を開始したらクリア
@@ -282,23 +288,6 @@ function App() {
                 {hasApiKey ? '更新' : '保存'}
               </button>
             </div>
-          </div>
-
-          <div className="settings-group">
-            <label htmlFor="voice-select">音声:</label>
-            <select
-              id="voice-select"
-              value={selectedVoice}
-              onChange={(e) => setSelectedVoice(e.target.value)}
-              className="select-field"
-            >
-              <option value="a0e99841-438c-4a64-b679-ae501e7d6091">
-                日本語 (女性)
-              </option>
-              <option value="95856005-0332-41b0-935f-352e296aa0df">
-                日本語 (男性)
-              </option>
-            </select>
           </div>
 
           <div className="settings-group">

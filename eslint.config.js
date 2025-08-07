@@ -34,6 +34,7 @@ export default [
         atob: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
+        console: 'readonly',
       },
     },
     plugins: {

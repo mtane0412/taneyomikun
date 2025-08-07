@@ -17,6 +17,7 @@ use commands::tts::{
     stop_speech
 };
 
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // ログシステムを初期化

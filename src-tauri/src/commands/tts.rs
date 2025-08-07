@@ -98,6 +98,7 @@ pub async fn remove_api_key(state: State<'_, TTSState>) -> Result<(), String> {
 #[tauri::command]
 pub async fn update_tts_config(
     state: State<'_, TTSState>,
+    model_id: Option<String>,
     voice_id: Option<String>,
     speed: Option<f32>,
     volume: Option<f32>,
@@ -105,6 +106,9 @@ pub async fn update_tts_config(
 ) -> Result<(), String> {
     let mut config = state.config.lock().await;
     
+    if let Some(model_id) = model_id {
+        config.model_id = model_id;
+    }
     if let Some(voice_id) = voice_id {
         config.voice_id = voice_id;
     }

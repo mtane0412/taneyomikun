@@ -13,6 +13,7 @@ const API_KEY_NAME: &str = "cartesia_api_key";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TTSConfig {
+    pub model_id: String,
     pub voice_id: String,
     pub speed: f32,
     pub volume: f32,
@@ -22,7 +23,8 @@ pub struct TTSConfig {
 impl Default for TTSConfig {
     fn default() -> Self {
         Self {
-            voice_id: String::from("a0e99841-438c-4a64-b679-ae501e7d6091"), // Japanese voice
+            model_id: String::from("sonic-2"),
+            voice_id: String::from("fb25b315-dfba-444f-b99d-4c8535672cb7"), // Japanese voice
             speed: 1.0,
             volume: 1.0,
             language: String::from("ja"),
@@ -91,6 +93,7 @@ impl ApiKeyManager {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn has_api_key() -> bool {
         Self::get_api_key().is_ok()
     }

@@ -15,6 +15,7 @@ pub enum TTSError {
     ApiError(String),
     ConfigError(String),
     AudioError(String),
+    Storage(String),
     UnknownError(String),
 }
 
@@ -28,6 +29,7 @@ impl fmt::Display for TTSError {
             TTSError::ApiError(msg) => write!(f, "APIエラー: {}", msg),
             TTSError::ConfigError(msg) => write!(f, "設定エラー: {}", msg),
             TTSError::AudioError(msg) => write!(f, "音声エラー: {}", msg),
+            TTSError::Storage(msg) => write!(f, "ストレージエラー: {}", msg),
             TTSError::UnknownError(msg) => write!(f, "不明なエラー: {}", msg),
         }
     }
