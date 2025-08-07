@@ -1,7 +1,7 @@
 /**
  * Vite設定ファイル
  * Tauri v2アプリケーション用の設定を定義
-**/
+ **/
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
