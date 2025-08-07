@@ -4,6 +4,7 @@
  **/
 import { useState, useEffect, useRef } from 'react'
 import { listen } from '@tauri-apps/api/event'
+import { invoke } from '@tauri-apps/api/core'
 import * as tts from './utils/tts'
 import { AudioPlayer } from './utils/audioPlayer'
 import { QueuePanel } from './components/QueuePanel'
@@ -28,6 +29,8 @@ function App() {
   const [showQueue, setShowQueue] = useState(false)
   const queueStore = useQueueStore()
   const currentQueueItemRef = useRef<QueueItem | null>(null)
+  const [httpPort, setHttpPort] = useState(50080)
+  const [httpEnabled, setHttpEnabled] = useState(true)
 
   const playText = async (textToPlay: string) => {
     if (!hasApiKey) {
@@ -131,6 +134,21 @@ function App() {
     }
   }
 
+  const handleSaveHttpConfig = async () => {
+    try {
+      log('Saving HTTP config', { port: httpPort, enabled: httpEnabled })
+      await invoke('update_http_config', {
+        port: httpPort,
+        enabled: httpEnabled,
+      })
+      log('HTTP config saved successfully')
+      window.alert('HTTPサーバー設定を保存しました')
+    } catch (err) {
+      error('HTTPサーバー設定保存エラー:', err)
+      window.alert(`HTTPサーバー設定の保存に失敗しました: ${err}`)
+    }
+  }
+
   useEffect(() => {
     log('Component mounted, setting up')
 
@@ -140,6 +158,18 @@ function App() {
       log('API key check result:', exists)
       setHasApiKey(exists)
     })
+
+    // HTTPサーバー設定の読み込み
+    log('Loading HTTP server config')
+    invoke<{ port: number; enabled: boolean }>('get_http_config')
+      .then((config) => {
+        log('HTTP config loaded:', config)
+        setHttpPort(config.port)
+        setHttpEnabled(config.enabled)
+      })
+      .catch((err) => {
+        error('Failed to load HTTP config:', err)
+      })
 
     // 音声データのイベントリスナーを設定
     log('Setting up event listeners')
@@ -195,12 +225,42 @@ function App() {
         },
       )
 
+      // HTTPリクエストのイベントリスナー
+      const unlistenHttpRequest = await listen<{ text: string; priority?: string }>(
+        'http-tts-request',
+        (event) => {
+          log('Received HTTP TTS request:', event.payload)
+          const priority = event.payload.priority === 'high' 
+            ? QueuePriority.HIGH 
+            : event.payload.priority === 'low' 
+            ? QueuePriority.LOW 
+            : QueuePriority.NORMAL
+          
+          queueStore.addItem(event.payload.text, priority)
+          queueStore.saveQueue()
+          
+          // 再生中でなければ自動再生を開始
+          if (!isPlaying) {
+            const nextItem = queueStore.getNextItem()
+            if (nextItem) {
+              currentQueueItemRef.current = nextItem
+              queueStore.updateStatus(nextItem.id, 'processing')
+              playText(nextItem.text).catch(() => {
+                queueStore.updateStatus(nextItem.id, 'error')
+                currentQueueItemRef.current = null
+              })
+            }
+          }
+        },
+      )
+
       // クリーンアップ
       return () => {
         log('Cleaning up event listeners')
         unlistenAudioChunk()
         unlistenAudioComplete()
         unlistenAudioError()
+        unlistenHttpRequest()
         if (audioPlayerRef.current) {
           audioPlayerRef.current.close()
         }
@@ -340,6 +400,57 @@ function App() {
               onChange={(e) => setSpeed(Number(e.target.value))}
               className="speed-slider"
             />
+          </div>
+
+          <div className="settings-group">
+            <label htmlFor="http-enabled">
+              HTTPサーバー
+              {httpEnabled && (
+                <span style={{ marginLeft: '8px', color: '#4CAF50', fontSize: '0.9em' }}>
+                  ✓ 有効 (ポート: {httpPort})
+                </span>
+              )}
+            </label>
+            <div style={{ marginBottom: '12px' }}>
+              <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.9em' }}>
+                <input
+                  id="http-enabled"
+                  type="checkbox"
+                  checked={httpEnabled}
+                  onChange={(e) => setHttpEnabled(e.target.checked)}
+                  style={{ marginRight: '8px' }}
+                />
+                HTTPサーバーを有効にする
+              </label>
+            </div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <label htmlFor="http-port" style={{ fontSize: '0.9em' }}>
+                ポート:
+              </label>
+              <input
+                id="http-port"
+                type="number"
+                min="1024"
+                max="65535"
+                value={httpPort}
+                onChange={(e) => setHttpPort(Number(e.target.value))}
+                disabled={!httpEnabled}
+                className="input-field"
+                style={{ width: '100px' }}
+              />
+              <button 
+                className="btn btn-secondary" 
+                onClick={handleSaveHttpConfig}
+                disabled={!httpEnabled}
+              >
+                保存
+              </button>
+            </div>
+            {httpEnabled && (
+              <p style={{ fontSize: '0.8em', color: '#666', marginTop: '8px' }}>
+                http://localhost:{httpPort}/tts にPOSTリクエストで文字列を送信できます
+              </p>
+            )}
           </div>
 
           <button
