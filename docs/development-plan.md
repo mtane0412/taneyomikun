@@ -58,10 +58,16 @@
   - update_tts_config, get_tts_config, synthesize_speech
 - ✅ フロントエンドTTSユーティリティ実装
 
-#### 4. 音声再生機能の実装
-- WebSocketでのストリーミング音声受信
-- 音声バッファリング管理
-- 再生制御（開始、停止、一時停止）
+#### 4. 音声再生機能の実装 ✅ 完了 (2025-08-07)
+- ✅ WebSocketでのストリーミング音声受信
+  - Cartesia APIからのWebSocket経由での音声データ受信実装
+  - Base64エンコード/デコード処理実装
+- ✅ 音声バッファリング管理
+  - Web Audio APIを使用したストリーミング再生実装
+  - AudioBufferを使用したキューイングシステム実装
+- ✅ 再生制御（開始、停止、一時停止）
+  - play/pause/stop機能の実装
+  - フロントエンドからの制御UI実装
 
 ### フェーズ2: 機能拡張（優先度: 中）
 
@@ -158,7 +164,15 @@ taneyomikun/
 
 ## 進捗ログ
 
-### 2025-08-07
+### 2025-08-07 (後半)
+- 音声再生機能の実装を完了
+  - Web Audio APIを使用したストリーミング音声再生実装
+  - AudioPlayerクラスの作成（PCM f32le形式対応）
+  - Tauriイベントシステムによるフロントエンド・バックエンド間通信
+  - 再生制御機能（play/pause/stop）の実装
+  - macOSでのrodioクレート互換性問題を回避（Web Audio API採用）
+
+### 2025-08-07 (前半)
 - Cartesia TTS API統合を完了
   - TTSモジュール実装（client.rs, config.rs, error.rs）
   - APIキーの安全な保存機能（keyringクレート使用）

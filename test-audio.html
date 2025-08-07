@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>音声再生テスト</title>
+    <meta charset="utf-8">
+</head>
+<body>
+    <h1>Web Audio API テスト</h1>
+    <button id="testBtn">テスト音声を再生</button>
+    <div id="log"></div>
+
+    <script>
+        const log = (msg) => {
+            const div = document.getElementById('log');
+            div.innerHTML += `<p>${new Date().toISOString()}: ${msg}</p>`;
+        };
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            try {
+                const audioContext = new AudioContext();
+                log('AudioContext created');
+
+                // テスト用のサイン波を生成
+                const sampleRate = 44100;
+                const duration = 1; // 1秒
+                const frequency = 440; // A4
+                const samples = sampleRate * duration;
+                
+                const buffer = audioContext.createBuffer(1, samples, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < samples; i++) {
+                    data[i] = Math.sin(2 * Math.PI * frequency * i / sampleRate) * 0.5;
+                }
+                
+                log('Test audio buffer created');
+
+                const source = audioContext.createBufferSource();
+                source.buffer = buffer;
+                source.connect(audioContext.destination);
+                source.start();
+                
+                log('Audio playback started');
+            } catch (err) {
+                log(`Error: ${err.message}`);
+            }
+        });
+
+        // Tauriイベントのテスト
+        if (window.__TAURI__) {
+            window.__TAURI__.event.listen('audio-chunk', (event) => {
+                log(`Received audio-chunk event: ${event.payload.length} chars`);
+            });
+            
+            window.__TAURI__.event.listen('audio-complete', () => {
+                log('Received audio-complete event');
+            });
+            
+            window.__TAURI__.event.listen('audio-error', (event) => {
+                log(`Received audio-error event: ${event.payload}`);
+            });
+            
+            log('Tauri event listeners registered');
+        } else {
+            log('Tauri API not available');
+        }
+    </script>
+</body>
+</html>

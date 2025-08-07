@@ -42,3 +42,7 @@ export async function getTTSConfig(): Promise<TTSConfig> {
 export async function synthesizeSpeech(text: string): Promise<void> {
   await invoke('synthesize_speech', { text })
 }
+
+export async function stopSpeech(): Promise<void> {
+  await invoke('stop_speech')
+}

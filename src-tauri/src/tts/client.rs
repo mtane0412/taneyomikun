@@ -7,6 +7,7 @@ use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tokio_tungstenite::{connect_async, tungstenite::Message};
+use log::{debug, info, warn, error};
 
 use super::config::{ApiKeyManager, TTSConfig};
 use super::error::{TTSError, TTSResult};
@@ -58,9 +59,14 @@ pub struct CartesiaClient {
 }
 
 impl CartesiaClient {
+    #[allow(dead_code)]
     pub fn new(config: TTSConfig) -> TTSResult<Self> {
         let api_key = ApiKeyManager::get_api_key()?;
         Ok(Self { config, api_key })
+    }
+    
+    pub fn new_with_api_key(config: TTSConfig, api_key: String) -> Self {
+        Self { config, api_key }
     }
 
     pub async fn synthesize_speech(
@@ -69,8 +75,11 @@ impl CartesiaClient {
         audio_tx: mpsc::Sender<Vec<u8>>,
     ) -> TTSResult<()> {
         let url = format!("{}?api_key={}&cartesia_version=2024-06-10", CARTESIA_WS_URL, self.api_key);
+        info!("[TTS Client] Connecting to Cartesia WebSocket");
+        debug!("[TTS Client] URL: {}", url.replace(&self.api_key, "***"));
         
         let (ws_stream, _) = connect_async(&url).await?;
+        info!("[TTS Client] WebSocket connection established");
         let (mut write, mut read) = ws_stream.split();
 
         let request = TTSRequest {
@@ -90,37 +99,69 @@ impl CartesiaClient {
             language: Some(self.config.language.clone()),
             stream: Some(true),
         };
+        
+        info!("[TTS Client] Request - Voice: {}, Language: {}, Speed: {:.1}", 
+              self.config.voice_id, self.config.language, self.config.speed);
+        debug!("[TTS Client] Text to synthesize: {}", text);
 
         let request_json = serde_json::to_string(&request)
             .map_err(|e| TTSError::ApiError(format!("Failed to serialize request: {}", e)))?;
-
+        
+        debug!("[TTS Client] Sending request: {}", request_json);
         write.send(Message::Text(request_json)).await?;
+        info!("[TTS Client] Request sent successfully");
 
+        info!("[TTS Client] Starting to receive audio chunks");
+        let mut chunk_count = 0;
+        let mut total_bytes = 0;
+        
         while let Some(message) = read.next().await {
             match message? {
                 Message::Text(text) => {
+                    debug!("[TTS Client] Received text message: {}", text);
                     let response: TTSResponse = serde_json::from_str(&text)
                         .map_err(|e| TTSError::ApiError(format!("Failed to parse response: {}", e)))?;
                     
                     match response.response_type.as_str() {
                         "chunk" => {
                             if let Some(data) = response.data {
+                                chunk_count += 1;
+                                debug!("[TTS Client] Processing chunk #{}, base64 length: {}", chunk_count, data.len());
+                                
                                 let audio_data = base64::Engine::decode(&base64::engine::general_purpose::STANDARD, &data)
                                     .map_err(|e| TTSError::AudioError(format!("Failed to decode audio: {}", e)))?;
+                                
+                                total_bytes += audio_data.len();
+                                info!("[TTS Client] Decoded chunk #{}, size: {} bytes, total: {} bytes", 
+                                      chunk_count, audio_data.len(), total_bytes);
+                                
                                 audio_tx.send(audio_data).await
                                     .map_err(|e| TTSError::AudioError(format!("Failed to send audio: {}", e)))?;
+                                debug!("[TTS Client] Chunk sent to audio channel");
                             }
                         }
-                        "done" => break,
+                        "done" => {
+                            info!("[TTS Client] Audio synthesis complete. Total chunks: {}, Total bytes: {}", 
+                                  chunk_count, total_bytes);
+                            break;
+                        }
                         "error" => {
                             let error_msg = response.error.unwrap_or_else(|| "Unknown error".to_string());
+                            error!("[TTS Client] API error: {}", error_msg);
                             return Err(TTSError::ApiError(error_msg));
                         }
-                        _ => {}
+                        _ => {
+                            warn!("[TTS Client] Unknown response type: {}", response.response_type);
+                        }
                     }
                 }
-                Message::Close(_) => break,
-                _ => {}
+                Message::Close(_) => {
+                    warn!("[TTS Client] WebSocket closed by server");
+                    break;
+                }
+                _ => {
+                    debug!("[TTS Client] Received non-text message type");
+                }
             }
         }
 

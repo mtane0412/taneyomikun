@@ -2,12 +2,21 @@
  * メインアプリケーションコンポーネント
  * 音声読み上げアプリケーションのメインUI
  **/
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { listen } from '@tauri-apps/api/event'
 import * as tts from './utils/tts'
+import { AudioPlayer } from './utils/audioPlayer'
+
+// デバッグログの有効化
+const DEBUG = true
+const log = (...args: any[]) => DEBUG && console.log('[App]', ...args)
+const error = (...args: any[]) => console.error('[App]', ...args)
 
 function App() {
   const [text, setText] = useState('')
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  const audioPlayerRef = useRef<AudioPlayer | null>(null)
   const [volume, setVolume] = useState(50)
   const [showSettings, setShowSettings] = useState(false)
   const [apiKey, setApiKey] = useState('')
@@ -18,6 +27,7 @@ function App() {
   const [hasApiKey, setHasApiKey] = useState(false)
 
   const handlePlay = async () => {
+    log('handlePlay called')
     if (!text.trim()) {
       window.alert('読み上げるテキストを入力してください')
       return
@@ -29,25 +39,67 @@ function App() {
     }
 
     try {
+      log('Starting playback')
       setIsPlaying(true)
+      
+      log('Updating TTS config')
       await tts.updateTTSConfig({
         voice_id: selectedVoice,
         speed,
         volume: volume / 100,
         language: 'ja',
       })
+
+      // 音声プレイヤーを初期化
+      if (!audioPlayerRef.current) {
+        log('Creating new AudioPlayer')
+        audioPlayerRef.current = new AudioPlayer()
+      }
+      audioPlayerRef.current.setVolume(volume / 100)
+      log('AudioPlayer ready, volume set to:', volume / 100)
+
+      log('Starting TTS synthesis')
       await tts.synthesizeSpeech(text)
-    } catch (error) {
-      window.console.error('読み上げエラー:', error)
-      window.alert(`読み上げ中にエラーが発生しました: ${error}`)
-    } finally {
+      log('TTS synthesis command sent')
+    } catch (err) {
+      error('読み上げエラー:', err)
+      window.alert(`読み上げ中にエラーが発生しました: ${err}`)
       setIsPlaying(false)
     }
   }
 
   const handleStop = async () => {
-    // TODO: 停止機能の実装
-    setIsPlaying(false)
+    log('handleStop called')
+    try {
+      await tts.stopSpeech()
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.stop()
+      }
+      setIsPlaying(false)
+      setIsPaused(false)
+      log('Playback stopped')
+    } catch (err) {
+      error('停止エラー:', err)
+    }
+  }
+
+  const handlePause = async () => {
+    log('handlePause called, isPaused:', isPaused)
+    if (!audioPlayerRef.current) return
+
+    try {
+      if (isPaused) {
+        audioPlayerRef.current.play()
+        setIsPaused(false)
+        log('Playback resumed')
+      } else {
+        audioPlayerRef.current.pause()
+        log('Playback paused')
+        setIsPaused(true)
+      }
+    } catch (error) {
+      window.console.error('一時停止/再開エラー:', error)
+    }
   }
 
   const handleSaveApiKey = async () => {
@@ -57,21 +109,76 @@ function App() {
     }
 
     try {
+      log('Saving API key')
       await tts.setApiKey(apiKey)
+      log('API key saved successfully')
       setHasApiKey(true)
       setApiKey('') // セキュリティのためクリア
       window.alert('APIキーを保存しました')
-    } catch (error) {
-      window.console.error('APIキー保存エラー:', error)
-      window.alert(`APIキーの保存に失敗しました: ${error}`)
+    } catch (err) {
+      error('APIキー保存エラー:', err)
+      window.alert(`APIキーの保存に失敗しました: ${err}`)
     }
   }
 
   useEffect(() => {
+    log('Component mounted, setting up')
+    
     // APIキーの存在確認
+    log('Checking API key')
     tts.checkApiKey().then((exists) => {
+      log('API key check result:', exists)
       setHasApiKey(exists)
     })
+
+    // 音声データのイベントリスナーを設定
+    log('Setting up event listeners')
+    const setupListeners = async () => {
+      const unlistenAudioChunk = await listen<string>(
+        'audio-chunk',
+        (event) => {
+          log('Received audio-chunk event, payload length:', event.payload.length)
+          if (audioPlayerRef.current) {
+            audioPlayerRef.current.appendAudioChunk(event.payload)
+          } else {
+            log('No audio player available for chunk')
+          }
+        },
+      )
+
+      const unlistenAudioComplete = await listen('audio-complete', () => {
+        log('Received audio-complete event')
+        setIsPlaying(false)
+        setIsPaused(false)
+      })
+
+      const unlistenAudioError = await listen<string>(
+        'audio-error',
+        (event) => {
+          error('音声エラー:', event.payload)
+          window.alert(`音声エラー: ${event.payload}`)
+          setIsPlaying(false)
+          setIsPaused(false)
+        },
+      )
+
+      // クリーンアップ
+      return () => {
+        log('Cleaning up event listeners')
+        unlistenAudioChunk()
+        unlistenAudioComplete()
+        unlistenAudioError()
+        if (audioPlayerRef.current) {
+          audioPlayerRef.current.close()
+        }
+      }
+    }
+
+    const cleanup = setupListeners()
+
+    return () => {
+      cleanup.then((fn) => fn())
+    }
   }, [])
 
   return (
@@ -96,6 +203,13 @@ function App() {
           disabled={isPlaying}
         >
           {isPlaying ? '読み上げ中...' : '読み上げ開始'}
+        </button>
+        <button
+          className="btn btn-secondary"
+          onClick={handlePause}
+          disabled={!isPlaying}
+        >
+          {isPaused ? '再開' : '一時停止'}
         </button>
         <button
           className="btn btn-secondary"
@@ -133,21 +247,39 @@ function App() {
           <h2>設定</h2>
 
           <div className="settings-group">
-            <label htmlFor="api-key">Cartesia API キー:</label>
+            <label htmlFor="api-key">
+              Cartesia API キー:
+              {hasApiKey && (
+                <span style={{ 
+                  marginLeft: '8px', 
+                  fontSize: '0.9em', 
+                  color: '#4CAF50',
+                  fontWeight: 'normal'
+                }}>
+                  ✓ 設定済み
+                </span>
+              )}
+            </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 id="api-key"
                 type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder={
-                  hasApiKey ? 'APIキー設定済み' : 'APIキーを入力してください'
-                }
+                value={hasApiKey && !apiKey ? '••••••••••••••••••••••••' : apiKey}
+                onChange={(e) => {
+                  const newValue = e.target.value
+                  // マスク文字列の場合は編集を開始したらクリア
+                  if (newValue !== '••••••••••••••••••••••••') {
+                    setApiKey(newValue)
+                  } else if (!hasApiKey) {
+                    setApiKey('')
+                  }
+                }}
+                placeholder={!hasApiKey ? 'APIキーを入力してください' : ''}
                 className="input-field"
                 style={{ flex: 1 }}
               />
               <button className="btn btn-secondary" onClick={handleSaveApiKey}>
-                保存
+                {hasApiKey ? '更新' : '保存'}
               </button>
             </div>
           </div>

@@ -31,20 +31,24 @@ impl Default for TTSConfig {
 }
 
 impl TTSConfig {
+    #[allow(dead_code)]
     pub fn new() -> Self {
         Self::default()
     }
 
+    #[allow(dead_code)]
     pub fn with_voice_id(mut self, voice_id: String) -> Self {
         self.voice_id = voice_id;
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_speed(mut self, speed: f32) -> Self {
         self.speed = speed.clamp(0.5, 2.0);
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_volume(mut self, volume: f32) -> Self {
         self.volume = volume.clamp(0.0, 1.0);
         self
@@ -55,16 +59,29 @@ pub struct ApiKeyManager;
 
 impl ApiKeyManager {
     pub fn save_api_key(api_key: &str) -> TTSResult<()> {
-        let entry = Entry::new(SERVICE_NAME, API_KEY_NAME)?;
-        entry.set_password(api_key)?;
+        eprintln!("Attempting to save API key to keyring...");
+        let entry = Entry::new(SERVICE_NAME, API_KEY_NAME)
+            .map_err(|e| {
+                eprintln!("Failed to create keyring entry: {:?}", e);
+                TTSError::ConfigError(format!("キーリングエントリの作成に失敗しました: {:?}", e))
+            })?;
+        entry.set_password(api_key)
+            .map_err(|e| {
+                eprintln!("Failed to set password in keyring: {:?}", e);
+                TTSError::ConfigError(format!("パスワードの設定に失敗しました: {:?}", e))
+            })?;
+        eprintln!("API key saved to keyring successfully");
         Ok(())
     }
 
     pub fn get_api_key() -> TTSResult<String> {
-        let entry = Entry::new(SERVICE_NAME, API_KEY_NAME)?;
+        let entry = Entry::new(SERVICE_NAME, API_KEY_NAME)
+            .map_err(|e| {
+                TTSError::ConfigError(format!("キーリングエントリの作成に失敗しました: {:?}", e))
+            })?;
         match entry.get_password() {
             Ok(password) => Ok(password),
-            Err(_) => Err(TTSError::ApiKeyNotFound),
+            Err(_) => Err(TTSError::ApiKeyNotFound)
         }
     }
 

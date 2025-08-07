@@ -27,6 +27,13 @@ export default [
         document: 'readonly',
         HTMLElement: 'readonly',
         process: 'readonly',
+        AudioContext: 'readonly',
+        AudioBuffer: 'readonly',
+        AudioBufferSourceNode: 'readonly',
+        GainNode: 'readonly',
+        atob: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
       },
     },
     plugins: {
