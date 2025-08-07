@@ -2,7 +2,8 @@
  * メインアプリケーションコンポーネント
  * 音声読み上げアプリケーションのメインUI
  **/
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { tauriApi, type VoiceInfo } from './utils/tauriApi'
 
 function App() {
   const [text, setText] = useState('')
@@ -10,22 +11,93 @@ function App() {
   const [volume, setVolume] = useState(50)
   const [showSettings, setShowSettings] = useState(false)
   const [apiKey, setApiKey] = useState('')
-  const [selectedVoice, setSelectedVoice] = useState('japanese-male-1')
+  const [selectedVoice, setSelectedVoice] = useState('sonic')
   const [speed, setSpeed] = useState(1.0)
+  const [hasApiKey, setHasApiKey] = useState(false)
+  const [voices, setVoices] = useState<VoiceInfo[]>([])
+  const [isLoadingVoices, setIsLoadingVoices] = useState(false)
 
-  const handlePlay = () => {
+  const handlePlay = async () => {
     if (!text.trim()) {
       window.alert('読み上げるテキストを入力してください')
       return
     }
-    setIsPlaying(true)
-    // TODO: Tauriコマンドを呼び出して読み上げ開始
+    if (!hasApiKey) {
+      window.alert('APIキーを設定してください')
+      setShowSettings(true)
+      return
+    }
+
+    try {
+      setIsPlaying(true)
+      await tauriApi.synthesizeText(text, {
+        voice_id: selectedVoice,
+        speed,
+        volume: volume / 100,
+        language: 'ja',
+      })
+    } catch (error) {
+      window.console.error('読み上げエラー:', error)
+      window.alert(`読み上げ中にエラーが発生しました: ${error}`)
+    } finally {
+      setIsPlaying(false)
+    }
   }
 
-  const handleStop = () => {
-    setIsPlaying(false)
-    // TODO: Tauriコマンドを呼び出して読み上げ停止
+  const handleStop = async () => {
+    try {
+      await tauriApi.stopSynthesis()
+      setIsPlaying(false)
+    } catch (error) {
+      window.console.error('停止エラー:', error)
+    }
   }
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) {
+      window.alert('APIキーを入力してください')
+      return
+    }
+
+    try {
+      await tauriApi.saveApiKey(apiKey)
+      setHasApiKey(true)
+      setApiKey('') // セキュリティのためクリア
+      await loadVoices()
+      window.alert('APIキーを保存しました')
+    } catch (error) {
+      window.console.error('APIキー保存エラー:', error)
+      window.alert(`APIキーの保存に失敗しました: ${error}`)
+    }
+  }
+
+  const loadVoices = async () => {
+    setIsLoadingVoices(true)
+    try {
+      const voiceList = await tauriApi.getVoices()
+      setVoices(voiceList)
+      if (
+        voiceList.length > 0 &&
+        !voiceList.find((v) => v.id === selectedVoice)
+      ) {
+        setSelectedVoice(voiceList[0].id)
+      }
+    } catch (error) {
+      window.console.error('音声リスト取得エラー:', error)
+    } finally {
+      setIsLoadingVoices(false)
+    }
+  }
+
+  useEffect(() => {
+    // APIキーの存在確認
+    tauriApi.checkApiKey().then((exists) => {
+      setHasApiKey(exists)
+      if (exists) {
+        loadVoices()
+      }
+    })
+  }, [])
 
   return (
     <div className="container">
@@ -87,14 +159,22 @@ function App() {
 
           <div className="settings-group">
             <label htmlFor="api-key">Cartesia API キー:</label>
-            <input
-              id="api-key"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder="APIキーを入力してください"
-              className="input-field"
-            />
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                id="api-key"
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                placeholder={
+                  hasApiKey ? 'APIキー設定済み' : 'APIキーを入力してください'
+                }
+                className="input-field"
+                style={{ flex: 1 }}
+              />
+              <button className="btn btn-secondary" onClick={handleSaveApiKey}>
+                保存
+              </button>
+            </div>
           </div>
 
           <div className="settings-group">
@@ -104,11 +184,19 @@ function App() {
               value={selectedVoice}
               onChange={(e) => setSelectedVoice(e.target.value)}
               className="select-field"
+              disabled={isLoadingVoices || voices.length === 0}
             >
-              <option value="japanese-male-1">日本語 男性 1</option>
-              <option value="japanese-female-1">日本語 女性 1</option>
-              <option value="japanese-male-2">日本語 男性 2</option>
-              <option value="japanese-female-2">日本語 女性 2</option>
+              {isLoadingVoices ? (
+                <option>読み込み中...</option>
+              ) : voices.length === 0 ? (
+                <option>APIキーを設定してください</option>
+              ) : (
+                voices.map((voice) => (
+                  <option key={voice.id} value={voice.id}>
+                    {voice.name} ({voice.language})
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -128,12 +216,9 @@ function App() {
 
           <button
             className="btn btn-primary"
-            onClick={() => {
-              // TODO: 設定を保存する
-              setShowSettings(false)
-            }}
+            onClick={() => setShowSettings(false)}
           >
-            保存
+            閉じる
           </button>
         </div>
       )}
