@@ -6,6 +6,9 @@ import { useState, useEffect, useRef } from 'react'
 import { listen } from '@tauri-apps/api/event'
 import * as tts from './utils/tts'
 import { AudioPlayer } from './utils/audioPlayer'
+import { QueuePanel } from './components/QueuePanel'
+import { useQueueStore } from './hooks/useQueueStore'
+import { QueueItem, QueuePriority } from './stores/queueStore'
 
 // デバッグログの有効化
 const DEBUG = true
@@ -22,13 +25,11 @@ function App() {
   const [apiKey, setApiKey] = useState('')
   const [speed, setSpeed] = useState(1.0)
   const [hasApiKey, setHasApiKey] = useState(false)
+  const [showQueue, setShowQueue] = useState(false)
+  const queueStore = useQueueStore()
+  const currentQueueItemRef = useRef<QueueItem | null>(null)
 
-  const handlePlay = async () => {
-    log('handlePlay called')
-    if (!text.trim()) {
-      window.alert('読み上げるテキストを入力してください')
-      return
-    }
+  const playText = async (textToPlay: string) => {
     if (!hasApiKey) {
       window.alert('APIキーを設定してください')
       setShowSettings(true)
@@ -58,13 +59,23 @@ function App() {
       log('AudioPlayer ready, volume set to:', volume / 100)
 
       log('Starting TTS synthesis')
-      await tts.synthesizeSpeech(text)
+      await tts.synthesizeSpeech(textToPlay)
       log('TTS synthesis command sent')
     } catch (err) {
       error('読み上げエラー:', err)
       window.alert(`読み上げ中にエラーが発生しました: ${err}`)
       setIsPlaying(false)
+      throw err
     }
+  }
+
+  const handlePlay = async () => {
+    log('handlePlay called')
+    if (!text.trim()) {
+      window.alert('読み上げるテキストを入力してください')
+      return
+    }
+    await playText(text)
   }
 
   const handleStop = async () => {
@@ -148,10 +159,30 @@ function App() {
         },
       )
 
-      const unlistenAudioComplete = await listen('audio-complete', () => {
+      const unlistenAudioComplete = await listen('audio-complete', async () => {
         log('Received audio-complete event')
         setIsPlaying(false)
         setIsPaused(false)
+
+        // 現在のキューアイテムを完了にマーク
+        if (currentQueueItemRef.current) {
+          queueStore.updateStatus(currentQueueItemRef.current.id, 'completed')
+          currentQueueItemRef.current = null
+        }
+
+        // 次のキューアイテムを自動再生
+        const nextItem = queueStore.getNext()
+        if (nextItem) {
+          log('Playing next queue item:', nextItem.text)
+          currentQueueItemRef.current = nextItem
+          queueStore.updateStatus(nextItem.id, 'processing')
+          try {
+            await playText(nextItem.text)
+          } catch {
+            queueStore.updateStatus(nextItem.id, 'error')
+            currentQueueItemRef.current = null
+          }
+        }
       })
 
       const unlistenAudioError = await listen<string>(
@@ -225,6 +256,13 @@ function App() {
           onClick={() => setShowSettings(!showSettings)}
         >
           ⚙️ 設定
+        </button>
+        <button
+          className="btn btn-secondary"
+          onClick={() => setShowQueue(!showQueue)}
+        >
+          📋 キュー (
+          {queueStore.items.filter((i) => i.status === 'pending').length})
         </button>
       </div>
 
@@ -311,6 +349,40 @@ function App() {
             閉じる
           </button>
         </div>
+      )}
+
+      {showQueue && (
+        <QueuePanel
+          store={queueStore.store}
+          onAdd={(text) => {
+            queueStore.addItem(text, QueuePriority.NORMAL)
+            queueStore.saveQueue()
+          }}
+          onRemove={(id) => {
+            queueStore.removeItem(id)
+            queueStore.saveQueue()
+          }}
+          onClear={() => {
+            if (window.confirm('すべてのキューアイテムを削除しますか？')) {
+              queueStore.clear()
+              queueStore.saveQueue()
+            }
+          }}
+          onPlayItem={async (item) => {
+            if (isPlaying) {
+              window.alert('現在再生中です。停止してから再生してください。')
+              return
+            }
+            currentQueueItemRef.current = item
+            queueStore.updateStatus(item.id, 'processing')
+            try {
+              await playText(item.text)
+            } catch {
+              queueStore.updateStatus(item.id, 'error')
+              currentQueueItemRef.current = null
+            }
+          }}
+        />
       )}
     </div>
   )
