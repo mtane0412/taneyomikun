@@ -1,31 +1,34 @@
 /**
- * TTS関連のエラー定義
- * API通信、WebSocket、音声処理のエラーを統一的に扱う
+ * TTS関連のエラー型定義
+ * Cartesia APIとの通信エラーや設定エラーを管理する
  */
 
+use serde::{Deserialize, Serialize};
 use std::fmt;
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub enum TTSError {
     ApiKeyNotFound,
+    ApiKeyInvalid,
     NetworkError(String),
-    ApiError(String),
     WebSocketError(String),
-    AudioProcessingError(String),
+    ApiError(String),
     ConfigError(String),
-    KeyringError(String),
+    AudioError(String),
+    UnknownError(String),
 }
 
 impl fmt::Display for TTSError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             TTSError::ApiKeyNotFound => write!(f, "APIキーが設定されていません"),
+            TTSError::ApiKeyInvalid => write!(f, "APIキーが無効です"),
             TTSError::NetworkError(msg) => write!(f, "ネットワークエラー: {}", msg),
-            TTSError::ApiError(msg) => write!(f, "APIエラー: {}", msg),
             TTSError::WebSocketError(msg) => write!(f, "WebSocketエラー: {}", msg),
-            TTSError::AudioProcessingError(msg) => write!(f, "音声処理エラー: {}", msg),
+            TTSError::ApiError(msg) => write!(f, "APIエラー: {}", msg),
             TTSError::ConfigError(msg) => write!(f, "設定エラー: {}", msg),
-            TTSError::KeyringError(msg) => write!(f, "キーリングエラー: {}", msg),
+            TTSError::AudioError(msg) => write!(f, "音声エラー: {}", msg),
+            TTSError::UnknownError(msg) => write!(f, "不明なエラー: {}", msg),
         }
     }
 }
@@ -44,9 +47,15 @@ impl From<tokio_tungstenite::tungstenite::Error> for TTSError {
     }
 }
 
+impl From<anyhow::Error> for TTSError {
+    fn from(err: anyhow::Error) -> Self {
+        TTSError::UnknownError(err.to_string())
+    }
+}
+
 impl From<keyring::Error> for TTSError {
     fn from(err: keyring::Error) -> Self {
-        TTSError::KeyringError(err.to_string())
+        TTSError::ConfigError(format!("キーリングエラー: {}", err))
     }
 }
 

@@ -1,10 +1,11 @@
 /**
- * TTS設定管理
- * APIキーの安全な保存、音声設定の管理
+ * TTS設定管理モジュール
+ * 音声合成の設定やAPIキーの安全な保存を管理する
  */
 
-use serde::{Deserialize, Serialize};
 use keyring::Entry;
+use serde::{Deserialize, Serialize};
+
 use super::error::{TTSError, TTSResult};
 
 const SERVICE_NAME: &str = "taneyomikun";
@@ -21,17 +22,38 @@ pub struct TTSConfig {
 impl Default for TTSConfig {
     fn default() -> Self {
         Self {
-            voice_id: "sonic".to_string(),
+            voice_id: String::from("a0e99841-438c-4a64-b679-ae501e7d6091"), // Japanese voice
             speed: 1.0,
             volume: 1.0,
-            language: "ja".to_string(),
+            language: String::from("ja"),
         }
     }
 }
 
-pub struct ConfigManager;
+impl TTSConfig {
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-impl ConfigManager {
+    pub fn with_voice_id(mut self, voice_id: String) -> Self {
+        self.voice_id = voice_id;
+        self
+    }
+
+    pub fn with_speed(mut self, speed: f32) -> Self {
+        self.speed = speed.clamp(0.5, 2.0);
+        self
+    }
+
+    pub fn with_volume(mut self, volume: f32) -> Self {
+        self.volume = volume.clamp(0.0, 1.0);
+        self
+    }
+}
+
+pub struct ApiKeyManager;
+
+impl ApiKeyManager {
     pub fn save_api_key(api_key: &str) -> TTSResult<()> {
         let entry = Entry::new(SERVICE_NAME, API_KEY_NAME)?;
         entry.set_password(api_key)?;
@@ -40,13 +62,19 @@ impl ConfigManager {
 
     pub fn get_api_key() -> TTSResult<String> {
         let entry = Entry::new(SERVICE_NAME, API_KEY_NAME)?;
-        entry.get_password()
-            .map_err(|_| TTSError::ApiKeyNotFound)
+        match entry.get_password() {
+            Ok(password) => Ok(password),
+            Err(_) => Err(TTSError::ApiKeyNotFound),
+        }
     }
 
     pub fn delete_api_key() -> TTSResult<()> {
         let entry = Entry::new(SERVICE_NAME, API_KEY_NAME)?;
         entry.delete_credential()?;
         Ok(())
+    }
+
+    pub fn has_api_key() -> bool {
+        Self::get_api_key().is_ok()
     }
 }

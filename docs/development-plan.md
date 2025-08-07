@@ -42,10 +42,21 @@
   - ✅ 音声選択ドロップダウン
   - ✅ 速度・音量スライダー
 
-#### 3. Cartesia TTS API統合
-- Rust側でのAPI通信モジュール実装
-- APIキーの安全な保存（Tauri の credentials API使用）
-- エラーハンドリング（ネットワークエラー、APIエラー）
+#### 3. Cartesia TTS API統合 ✅ 完了 (2025-08-07)
+- ✅ Rust側でのAPI通信モジュール実装
+  - TTSモジュール構造作成（client, config, error）
+  - CartesiaClientの実装（WebSocket接続対応）
+  - エラー型定義（TTSError, TTSResult）
+- ✅ APIキーの安全な保存（keyringクレート使用）
+  - ApiKeyManagerの実装
+  - セキュアなAPIキー保存・取得・削除機能
+- ✅ エラーハンドリング（ネットワークエラー、APIエラー）
+  - 各種エラーケースの網羅的な実装
+  - 日本語エラーメッセージ対応
+- ✅ Tauriコマンドの実装
+  - set_api_key, check_api_key, remove_api_key
+  - update_tts_config, get_tts_config, synthesize_speech
+- ✅ フロントエンドTTSユーティリティ実装
 
 #### 4. 音声再生機能の実装
 - WebSocketでのストリーミング音声受信
@@ -148,6 +159,12 @@ taneyomikun/
 ## 進捗ログ
 
 ### 2025-08-07
+- Cartesia TTS API統合を完了
+  - TTSモジュール実装（client.rs, config.rs, error.rs）
+  - APIキーの安全な保存機能（keyringクレート使用）
+  - Tauriコマンド実装（6個のコマンド）
+  - フロントエンドTTSユーティリティ実装
+  - App.tsxのAPI統合対応
 - 基本的なUIデザインと実装を完了
   - メインウィンドウ（テキスト入力、読み上げボタン、音量インジケーター）
   - 設定パネル（APIキー入力、音声選択、速度調整）

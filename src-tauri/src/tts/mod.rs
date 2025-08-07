@@ -1,11 +1,10 @@
 /**
- * TTSモジュールのエントリーポイント
- * Cartesia APIとの通信、音声合成機能を提供
+ * TTS (Text-to-Speech) モジュール
+ * Cartesia APIとの通信を管理し、音声合成機能を提供する
  */
 
-pub mod cartesia;
+pub mod client;
 pub mod config;
 pub mod error;
 
-pub use cartesia::CartesiaClient;
 pub use config::TTSConfig;

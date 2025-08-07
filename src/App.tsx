@@ -3,7 +3,7 @@
  * 音声読み上げアプリケーションのメインUI
  **/
 import { useState, useEffect } from 'react'
-import { tauriApi, type VoiceInfo } from './utils/tauriApi'
+import * as tts from './utils/tts'
 
 function App() {
   const [text, setText] = useState('')
@@ -11,11 +11,11 @@ function App() {
   const [volume, setVolume] = useState(50)
   const [showSettings, setShowSettings] = useState(false)
   const [apiKey, setApiKey] = useState('')
-  const [selectedVoice, setSelectedVoice] = useState('sonic')
+  const [selectedVoice, setSelectedVoice] = useState(
+    'a0e99841-438c-4a64-b679-ae501e7d6091',
+  )
   const [speed, setSpeed] = useState(1.0)
   const [hasApiKey, setHasApiKey] = useState(false)
-  const [voices, setVoices] = useState<VoiceInfo[]>([])
-  const [isLoadingVoices, setIsLoadingVoices] = useState(false)
 
   const handlePlay = async () => {
     if (!text.trim()) {
@@ -30,12 +30,13 @@ function App() {
 
     try {
       setIsPlaying(true)
-      await tauriApi.synthesizeText(text, {
+      await tts.updateTTSConfig({
         voice_id: selectedVoice,
         speed,
         volume: volume / 100,
         language: 'ja',
       })
+      await tts.synthesizeSpeech(text)
     } catch (error) {
       window.console.error('読み上げエラー:', error)
       window.alert(`読み上げ中にエラーが発生しました: ${error}`)
@@ -45,12 +46,8 @@ function App() {
   }
 
   const handleStop = async () => {
-    try {
-      await tauriApi.stopSynthesis()
-      setIsPlaying(false)
-    } catch (error) {
-      window.console.error('停止エラー:', error)
-    }
+    // TODO: 停止機能の実装
+    setIsPlaying(false)
   }
 
   const handleSaveApiKey = async () => {
@@ -60,10 +57,9 @@ function App() {
     }
 
     try {
-      await tauriApi.saveApiKey(apiKey)
+      await tts.setApiKey(apiKey)
       setHasApiKey(true)
       setApiKey('') // セキュリティのためクリア
-      await loadVoices()
       window.alert('APIキーを保存しました')
     } catch (error) {
       window.console.error('APIキー保存エラー:', error)
@@ -71,31 +67,10 @@ function App() {
     }
   }
 
-  const loadVoices = async () => {
-    setIsLoadingVoices(true)
-    try {
-      const voiceList = await tauriApi.getVoices()
-      setVoices(voiceList)
-      if (
-        voiceList.length > 0 &&
-        !voiceList.find((v) => v.id === selectedVoice)
-      ) {
-        setSelectedVoice(voiceList[0].id)
-      }
-    } catch (error) {
-      window.console.error('音声リスト取得エラー:', error)
-    } finally {
-      setIsLoadingVoices(false)
-    }
-  }
-
   useEffect(() => {
     // APIキーの存在確認
-    tauriApi.checkApiKey().then((exists) => {
+    tts.checkApiKey().then((exists) => {
       setHasApiKey(exists)
-      if (exists) {
-        loadVoices()
-      }
     })
   }, [])
 
@@ -184,19 +159,13 @@ function App() {
               value={selectedVoice}
               onChange={(e) => setSelectedVoice(e.target.value)}
               className="select-field"
-              disabled={isLoadingVoices || voices.length === 0}
             >
-              {isLoadingVoices ? (
-                <option>読み込み中...</option>
-              ) : voices.length === 0 ? (
-                <option>APIキーを設定してください</option>
-              ) : (
-                voices.map((voice) => (
-                  <option key={voice.id} value={voice.id}>
-                    {voice.name} ({voice.language})
-                  </option>
-                ))
-              )}
+              <option value="a0e99841-438c-4a64-b679-ae501e7d6091">
+                日本語 (女性)
+              </option>
+              <option value="95856005-0332-41b0-935f-352e296aa0df">
+                日本語 (男性)
+              </option>
             </select>
           </div>
 
