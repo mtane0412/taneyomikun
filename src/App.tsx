@@ -9,6 +9,8 @@ import * as tts from './utils/tts'
 import { AudioPlayer } from './utils/audioPlayer'
 import { HistoryPanel } from './components/HistoryPanel'
 import { useHistoryStore } from './stores/historyStore'
+import { useLanguageStore } from './stores/languageStore'
+import { LANGUAGE_OPTIONS, Language } from './types/language'
 
 // デバッグログの有効化
 const DEBUG = true
@@ -27,10 +29,10 @@ function App() {
   const [volume, setVolume] = useState(50)
   const [showSettings, setShowSettings] = useState(false)
   const [apiKey, setApiKey] = useState('')
-  const [speed, setSpeed] = useState(1.0)
   const [hasApiKey, setHasApiKey] = useState(false)
   const [voiceSpeed, setVoiceSpeed] = useState(0)
   const historyStore = useHistoryStore()
+  const languageStore = useLanguageStore()
   const [httpPort, setHttpPort] = useState(50080)
   const [httpEnabled, setHttpEnabled] = useState(true)
   const hasApiKeyRef = useRef(false)
@@ -40,7 +42,7 @@ function App() {
     hasApiKeyRef.current = hasApiKey
   }, [hasApiKey])
 
-  const playText = async (textToPlay: string) => {
+  const playText = async (textToPlay: string, overrideLanguage?: string) => {
     if (!hasApiKeyRef.current) {
       window.alert('APIキーを設定してください')
       setShowSettings(true)
@@ -51,13 +53,19 @@ function App() {
       log('Starting playback')
       setIsPlaying(true)
 
+      // 言語設定を取得（オーバーライドがあればそれを使用）
+      const targetLanguage = overrideLanguage || languageStore.language
+      const languageOption =
+        LANGUAGE_OPTIONS.find((opt) => opt.code === targetLanguage) ||
+        LANGUAGE_OPTIONS.find((opt) => opt.code === languageStore.language)!
+
       log('Updating TTS config')
       const config = {
         model_id: 'sonic-2',
-        voice_id: 'fb25b315-dfba-444f-b99d-4c8535672cb7',
-        speed,
+        voice_id: languageOption.voiceId,
+        speed: 1.0,
         volume: volume / 100,
-        language: 'ja',
+        language: languageOption.code,
         voice_speed: voiceSpeed,
       }
       log('TTS config to be sent:', config)
@@ -232,6 +240,7 @@ function App() {
         text: string
         priority?: string
         voice_speed?: number
+        language?: string
       }>('http-tts-request', async (event) => {
         window.console.log('[App] Received HTTP TTS request:', event.payload)
         window.console.log('[App] Current voiceSpeed:', voiceSpeed)
@@ -267,7 +276,8 @@ function App() {
           await new Promise((resolve) => window.setTimeout(resolve, 100))
 
           window.console.log('[App] Starting new playback...')
-          await playText(event.payload.text)
+          // HTTPリクエストで言語が指定されている場合はそれを使用
+          await playText(event.payload.text, event.payload.language)
           window.console.log('[App] Playback completed')
           historyStore.updateStatus(historyItem.id, 'completed')
         } catch (err) {
@@ -403,6 +413,31 @@ function App() {
             className="voice-speed-slider"
           />
         </div>
+
+        <div className="language-container">
+          <label htmlFor="language">言語:</label>
+          <select
+            id="language"
+            value={languageStore.language}
+            onChange={(e) =>
+              languageStore.setLanguage(e.target.value as Language)
+            }
+            className="language-select"
+            style={{
+              padding: '4px 8px',
+              borderRadius: '4px',
+              border: '1px solid #ccc',
+              fontSize: '14px',
+              cursor: 'pointer',
+            }}
+          >
+            {LANGUAGE_OPTIONS.map((option) => (
+              <option key={option.code} value={option.code}>
+                {option.name}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {showSettings && (
@@ -449,23 +484,6 @@ function App() {
                 {hasApiKey ? '更新' : '保存'}
               </button>
             </div>
-          </div>
-
-          <div className="settings-group">
-            <label htmlFor="speed">再生速度: {speed.toFixed(1)}x</label>
-            <input
-              id="speed"
-              type="range"
-              min="0.5"
-              max="2.0"
-              step="0.1"
-              value={speed}
-              onChange={(e) => setSpeed(Number(e.target.value))}
-              className="speed-slider"
-            />
-            <p style={{ fontSize: '0.8em', color: '#666', marginTop: '4px' }}>
-              再生速度は音声の再生スピードを調整します（音声の生成には影響しません）
-            </p>
           </div>
 
           <div className="settings-group">

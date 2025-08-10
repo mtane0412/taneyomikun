@@ -534,3 +534,19 @@ hr {
   margin: 0.5rem 0;
 }
 
+/* 言語選択 */
+.language-container {
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.language-container label {
+  min-width: 60px;
+}
+
+.language-select {
+  flex: 1;
+  max-width: 200px;
+}

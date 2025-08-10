@@ -20,6 +20,8 @@ pub struct TtsRequest {
     pub priority: Option<String>,
     #[serde(default)]
     pub voice_speed: Option<f32>,
+    #[serde(default)]
+    pub language: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
