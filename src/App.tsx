@@ -7,6 +7,7 @@ import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import * as tts from './utils/tts'
 import { AudioPlayer } from './utils/audioPlayer'
+import { HistoryPanel } from './components/HistoryPanel'
 import { useHistoryStore } from './stores/historyStore'
 
 // デバッグログの有効化
@@ -464,6 +465,30 @@ function App() {
           </button>
         </div>
       )}
+
+      <HistoryPanel
+        items={historyStore.items}
+        onClear={() => {
+          if (window.confirm('すべての履歴を削除しますか？')) {
+            historyStore.clearHistory()
+          }
+        }}
+        onRemove={(id) => {
+          historyStore.removeItem(id)
+        }}
+        onReplay={async (item) => {
+          if (isPlaying) {
+            await handleStop()
+          }
+          const newItem = historyStore.addItem(item.text)
+          try {
+            await playText(item.text)
+            historyStore.updateStatus(newItem.id, 'completed')
+          } catch {
+            historyStore.updateStatus(newItem.id, 'error')
+          }
+        }}
+      />
     </div>
   )
 }
