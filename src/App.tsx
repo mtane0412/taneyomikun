@@ -15,6 +15,7 @@ import { VolumeControl } from './components/VolumeControl'
 import { SpeedControl } from './components/SpeedControl'
 import { LanguageFlag } from './components/LanguageFlag'
 import { SettingsModal } from './components/SettingsModal'
+import { ProfileIcon } from './components/ProfileIcon'
 
 // デバッグログの有効化
 const DEBUG = true
@@ -260,6 +261,16 @@ function App() {
       >
         音声読み上げアプリケーション
       </p>
+
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          marginBottom: '16px',
+        }}
+      >
+        <ProfileIcon size={80} />
+      </div>
 
       <div className="text-area-container">
         <textarea
