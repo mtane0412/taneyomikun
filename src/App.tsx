@@ -259,7 +259,7 @@ function App() {
           color: 'var(--system-label-secondary)',
         }}
       >
-        音声読み上げアプリケーション
+        Text to Speech in Tanenobu voice
       </p>
 
       <div className="speech-bubble-container">
