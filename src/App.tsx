@@ -89,7 +89,17 @@ function App() {
       window.alert('読み上げるテキストを入力してください')
       return
     }
-    await playText(text)
+
+    // 履歴に追加
+    const historyItem = historyStore.addItem(text)
+
+    try {
+      await playText(text)
+      historyStore.updateStatus(historyItem.id, 'completed')
+    } catch (err) {
+      historyStore.updateStatus(historyItem.id, 'error')
+      throw err
+    }
   }
 
   const handleStop = async () => {
@@ -235,7 +245,10 @@ function App() {
 
         // HTTPリクエストからvoice_speedを一時的に設定（未指定の場合は現在の設定値を使用）
         const originalVoiceSpeed = voiceSpeed
-        if (event.payload.voice_speed !== undefined && event.payload.voice_speed !== null) {
+        if (
+          event.payload.voice_speed !== undefined &&
+          event.payload.voice_speed !== null
+        ) {
           setVoiceSpeed(event.payload.voice_speed)
         }
 
@@ -263,7 +276,10 @@ function App() {
           historyStore.updateStatus(historyItem.id, 'error')
         } finally {
           // 元の設定に戻す
-          if (event.payload.voice_speed !== undefined && event.payload.voice_speed !== null) {
+          if (
+            event.payload.voice_speed !== undefined &&
+            event.payload.voice_speed !== null
+          ) {
             setVoiceSpeed(originalVoiceSpeed)
           }
         }
