@@ -4,7 +4,6 @@
  **/
 import { useState, useEffect, useRef } from 'react'
 import { listen } from '@tauri-apps/api/event'
-import { invoke } from '@tauri-apps/api/core'
 import * as tts from './utils/tts'
 import { AudioPlayer } from './utils/audioPlayer'
 import { HistoryPanel } from './components/HistoryPanel'
@@ -15,6 +14,7 @@ import { Play, Square, Settings } from 'lucide-react'
 import { VolumeControl } from './components/VolumeControl'
 import { SpeedControl } from './components/SpeedControl'
 import { LanguageFlag } from './components/LanguageFlag'
+import { SettingsModal } from './components/SettingsModal'
 
 // デバッグログの有効化
 const DEBUG = true
@@ -31,13 +31,10 @@ function App() {
   const audioPlayerRef = useRef<AudioPlayer | null>(null)
   const [volume, setVolume] = useState(50)
   const [showSettings, setShowSettings] = useState(false)
-  const [apiKey, setApiKey] = useState('')
   const [hasApiKey, setHasApiKey] = useState(false)
   const [voiceSpeed, setVoiceSpeed] = useState(0)
   const historyStore = useHistoryStore()
   const languageStore = useLanguageStore()
-  const [httpPort, setHttpPort] = useState(50080)
-  const [httpEnabled, setHttpEnabled] = useState(true)
   const hasApiKeyRef = useRef(false)
 
   // hasApiKeyの変更をrefに反映
@@ -127,40 +124,6 @@ function App() {
     }
   }
 
-  const handleSaveApiKey = async () => {
-    if (!apiKey.trim()) {
-      window.alert('APIキーを入力してください')
-      return
-    }
-
-    try {
-      log('Saving API key')
-      await tts.setApiKey(apiKey)
-      log('API key saved successfully')
-      setHasApiKey(true)
-      setApiKey('') // セキュリティのためクリア
-      window.alert('APIキーを保存しました')
-    } catch (err) {
-      error('APIキー保存エラー:', err)
-      window.alert(`APIキーの保存に失敗しました: ${err}`)
-    }
-  }
-
-  const handleSaveHttpConfig = async () => {
-    try {
-      log('Saving HTTP config', { port: httpPort, enabled: httpEnabled })
-      await invoke('update_http_config', {
-        port: httpPort,
-        enabled: httpEnabled,
-      })
-      log('HTTP config saved successfully')
-      window.alert('HTTPサーバー設定を保存しました')
-    } catch (err) {
-      error('HTTPサーバー設定保存エラー:', err)
-      window.alert(`HTTPサーバー設定の保存に失敗しました: ${err}`)
-    }
-  }
-
   useEffect(() => {
     log('Component mounted, setting up')
 
@@ -170,18 +133,6 @@ function App() {
       log('API key check result:', exists)
       setHasApiKey(exists)
     })
-
-    // HTTPサーバー設定の読み込み
-    log('Loading HTTP server config')
-    invoke<{ port: number; enabled: boolean }>('get_http_config')
-      .then((config) => {
-        log('HTTP config loaded:', config)
-        setHttpPort(config.port)
-        setHttpEnabled(config.enabled)
-      })
-      .catch((err) => {
-        error('Failed to load HTTP config:', err)
-      })
 
     // 音声データのイベントリスナーを設定
     log('Setting up event listeners')
@@ -352,126 +303,10 @@ function App() {
         <LanguageFlag />
       </div>
 
-      {showSettings && (
-        <div className="settings-panel animate-fade-in">
-          <h2 className="system-headline">設定</h2>
-
-          <div className="settings-group">
-            <label htmlFor="api-key">
-              Cartesia API キー:
-              {hasApiKey && (
-                <span
-                  style={{
-                    marginLeft: '8px',
-                    fontSize: '0.9em',
-                    color: '#4CAF50',
-                    fontWeight: 'normal',
-                  }}
-                >
-                  ✓ 設定済み
-                </span>
-              )}
-            </label>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input
-                id="api-key"
-                type="password"
-                value={
-                  hasApiKey && !apiKey ? '••••••••••••••••••••••••' : apiKey
-                }
-                onChange={(e) => {
-                  const newValue = e.target.value
-                  // マスク文字列の場合は編集を開始したらクリア
-                  if (newValue !== '••••••••••••••••••••••••') {
-                    setApiKey(newValue)
-                  } else if (!hasApiKey) {
-                    setApiKey('')
-                  }
-                }}
-                placeholder={!hasApiKey ? 'APIキーを入力してください' : ''}
-                className="input-field"
-                style={{ flex: 1 }}
-              />
-              <button className="btn btn-secondary" onClick={handleSaveApiKey}>
-                {hasApiKey ? '更新' : '保存'}
-              </button>
-            </div>
-          </div>
-
-          <div className="settings-group">
-            <label htmlFor="http-enabled">
-              HTTPサーバー
-              {httpEnabled && (
-                <span
-                  style={{
-                    marginLeft: '8px',
-                    color: '#4CAF50',
-                    fontSize: '0.9em',
-                  }}
-                >
-                  ✓ 有効 (ポート: {httpPort})
-                </span>
-              )}
-            </label>
-            <div style={{ marginBottom: '12px' }}>
-              <label
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  fontSize: '0.9em',
-                }}
-              >
-                <input
-                  id="http-enabled"
-                  type="checkbox"
-                  checked={httpEnabled}
-                  onChange={(e) => setHttpEnabled(e.target.checked)}
-                  style={{ marginRight: '8px' }}
-                />
-                HTTPサーバーを有効にする
-              </label>
-            </div>
-            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-              <label htmlFor="http-port" style={{ fontSize: '0.9em' }}>
-                ポート:
-              </label>
-              <input
-                id="http-port"
-                type="number"
-                min="1024"
-                max="65535"
-                value={httpPort}
-                onChange={(e) => setHttpPort(Number(e.target.value))}
-                disabled={!httpEnabled}
-                className="input-field"
-                style={{ width: '100px' }}
-              />
-              <button
-                className="btn btn-secondary"
-                onClick={handleSaveHttpConfig}
-                disabled={!httpEnabled}
-              >
-                保存
-              </button>
-            </div>
-            {httpEnabled && (
-              <p style={{ fontSize: '0.8em', color: '#666', marginTop: '8px' }}>
-                http://localhost:{httpPort}/tts
-                にPOSTリクエストで文字列を送信できます
-              </p>
-            )}
-          </div>
-
-          <div style={{ textAlign: 'center', marginTop: '32px' }}>
-            <button
-              className="btn btn-primary"
-              onClick={() => setShowSettings(false)}
-            >
-              閉じる
-            </button>
-          </div>
-        </div>
-      )}
+      <SettingsModal
+        isOpen={showSettings}
+        onClose={() => setShowSettings(false)}
+      />
 
       <HistoryPanel
         items={historyStore.items}
