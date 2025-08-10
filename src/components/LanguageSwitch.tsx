@@ -11,14 +11,6 @@ const FlagIcon: React.FC<{ language: Language }> = ({ language }) => {
   const flags: Record<Language, string> = {
     ja: '🇯🇵',
     en: '🇺🇸',
-    zh: '🇨🇳',
-    ko: '🇰🇷',
-    es: '🇪🇸',
-    fr: '🇫🇷',
-    de: '🇩🇪',
-    it: '🇮🇹',
-    pt: '🇵🇹',
-    ru: '🇷🇺',
   }
 
   return (

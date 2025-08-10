@@ -18,7 +18,6 @@ export class AudioPlayer {
   private isPlaying = false
   private currentSource: AudioBufferSourceNode | null = null
   private nextStartTime = 0
-  private startTime = 0
   private totalChunksReceived = 0
   private totalBytesReceived = 0
   private totalBuffersPlayed = 0
@@ -103,7 +102,6 @@ export class AudioPlayer {
       log('Starting new playback')
       this.isPlaying = true
       this.nextStartTime = this.audioContext.currentTime
-      this.startTime = this.nextStartTime
       this.scheduleNextBuffer()
     } else {
       log('Cannot play: already playing or queue empty')
@@ -122,7 +120,6 @@ export class AudioPlayer {
     this.audioQueue = []
     this.isPlaying = false
     this.nextStartTime = 0
-    this.startTime = 0
     log('Playback stopped')
   }
 

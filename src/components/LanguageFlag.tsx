@@ -9,14 +9,6 @@ import { LANGUAGE_OPTIONS, Language } from '../types/language'
 const FLAGS: Record<Language, string> = {
   ja: '🇯🇵',
   en: '🇺🇸',
-  zh: '🇨🇳',
-  ko: '🇰🇷',
-  es: '🇪🇸',
-  fr: '🇫🇷',
-  de: '🇩🇪',
-  it: '🇮🇹',
-  pt: '🇵🇹',
-  ru: '🇷🇺',
 }
 
 export function LanguageFlag() {
