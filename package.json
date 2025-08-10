@@ -49,6 +49,7 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "lucide-react": "^0.539.0",
     "zustand": "^5.0.7"
   }
 }

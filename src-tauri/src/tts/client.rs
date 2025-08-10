@@ -5,7 +5,7 @@
 
 use futures_util::{SinkExt, StreamExt};
 use serde::{Deserialize, Serialize};
-use tokio::sync::mpsc;
+use tokio::sync::{mpsc, oneshot};
 use tokio_tungstenite::{connect_async, tungstenite::Message};
 use log::{debug, info, warn, error};
 
@@ -81,6 +81,7 @@ impl CartesiaClient {
         &self,
         text: &str,
         audio_tx: mpsc::Sender<Vec<u8>>,
+        mut cancel_rx: oneshot::Receiver<()>,
     ) -> TTSResult<()> {
         let url = format!("{}?api_key={}&cartesia_version=2024-06-10", CARTESIA_WS_URL, self.api_key);
         info!("[TTS Client] Connecting to Cartesia WebSocket");
@@ -130,8 +131,18 @@ impl CartesiaClient {
         let mut chunk_count = 0;
         let mut total_bytes = 0;
         
-        while let Some(message) = read.next().await {
-            match message? {
+        loop {
+            tokio::select! {
+                // キャンセル信号を受信
+                _ = &mut cancel_rx => {
+                    warn!("[TTS Client] Synthesis cancelled");
+                    write.close().await?;
+                    return Ok(());
+                }
+                // WebSocketメッセージを受信
+                message = read.next() => {
+                    match message {
+                        Some(Ok(msg)) => match msg {
                 Message::Text(text) => {
                     debug!("[TTS Client] Received text message: {}", text);
                     let response: TTSResponse = serde_json::from_str(&text)
@@ -170,12 +181,23 @@ impl CartesiaClient {
                         }
                     }
                 }
-                Message::Close(_) => {
-                    warn!("[TTS Client] WebSocket closed by server");
-                    break;
-                }
-                _ => {
-                    debug!("[TTS Client] Received non-text message type");
+                            Message::Close(_) => {
+                                warn!("[TTS Client] WebSocket closed by server");
+                                break;
+                            }
+                            _ => {
+                                debug!("[TTS Client] Received non-text message type");
+                            }
+                        },
+                        Some(Err(e)) => {
+                            error!("[TTS Client] WebSocket error: {}", e);
+                            return Err(TTSError::WebSocketError(e.to_string()));
+                        }
+                        None => {
+                            warn!("[TTS Client] WebSocket stream ended");
+                            break;
+                        }
+                    }
                 }
             }
         }

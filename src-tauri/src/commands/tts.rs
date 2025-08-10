@@ -10,7 +10,7 @@ use crate::tts::{
     TTSConfig
 };
 use tauri::{AppHandle, Emitter, State};
-use tokio::sync::{Mutex, mpsc};
+use tokio::sync::{Mutex, mpsc, oneshot};
 use std::sync::Arc;
 use log::info;
 
@@ -18,6 +18,7 @@ pub struct TTSState {
     pub config: Arc<Mutex<TTSConfig>>,
     pub is_synthesizing: Arc<Mutex<bool>>,
     pub api_key: Arc<Mutex<Option<String>>>,
+    pub cancel_tx: Arc<Mutex<Option<oneshot::Sender<()>>>>,
 }
 
 impl Default for TTSState {
@@ -26,6 +27,7 @@ impl Default for TTSState {
             config: Arc::new(Mutex::new(TTSConfig::default())),
             is_synthesizing: Arc::new(Mutex::new(false)),
             api_key: Arc::new(Mutex::new(None)),
+            cancel_tx: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -150,6 +152,12 @@ pub async fn synthesize_speech(
     *is_synthesizing = true;
     drop(is_synthesizing);
     
+    // キャンセル用のチャンネルを作成
+    let (cancel_tx, cancel_rx) = oneshot::channel::<()>();
+    let mut cancel_sender = state.cancel_tx.lock().await;
+    *cancel_sender = Some(cancel_tx);
+    drop(cancel_sender);
+    
     let config = state.config.lock().await.clone();
     let is_synthesizing_clone = state.is_synthesizing.clone();
     
@@ -209,16 +217,21 @@ pub async fn synthesize_speech(
     };
     
     // バックグラウンドで音声合成を実行
+    let cancel_tx_clone = state.cancel_tx.clone();
     tokio::spawn(async move {
         eprintln!("Starting synthesis task...");
         let client = CartesiaClient::new_with_api_key(config, api_key);
         
-        if let Err(e) = client.synthesize_speech(&text, audio_tx).await {
+        if let Err(e) = client.synthesize_speech(&text, audio_tx, cancel_rx).await {
             eprintln!("音声合成に失敗しました: {}", e);
             let _ = app.emit("audio-error", format!("音声合成に失敗しました: {}", e));
         } else {
             eprintln!("Synthesis completed successfully");
         }
+        
+        // キャンセルチャンネルをクリア
+        let mut cancel_sender = cancel_tx_clone.lock().await;
+        *cancel_sender = None;
     });
     
     info!("[TTS Command] Command returned successfully");
@@ -227,6 +240,15 @@ pub async fn synthesize_speech(
 
 #[tauri::command]
 pub async fn stop_speech(state: State<'_, TTSState>) -> Result<(), String> {
+    eprintln!("stop_speech command called");
+    
+    // キャンセル信号を送信
+    let mut cancel_sender = state.cancel_tx.lock().await;
+    if let Some(sender) = cancel_sender.take() {
+        let _ = sender.send(());
+        eprintln!("Cancel signal sent");
+    }
+    
     let mut is_synthesizing = state.is_synthesizing.lock().await;
     *is_synthesizing = false;
     Ok(())

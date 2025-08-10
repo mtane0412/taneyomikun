@@ -16,10 +16,8 @@ export class AudioPlayer {
   private gainNode: GainNode
   private audioQueue: AudioBuffer[] = []
   private isPlaying = false
-  private isPaused = false
   private currentSource: AudioBufferSourceNode | null = null
   private nextStartTime = 0
-  private pauseTime = 0
   private startTime = 0
   private totalChunksReceived = 0
   private totalBytesReceived = 0
@@ -79,7 +77,7 @@ export class AudioPlayer {
       log(`Added to queue, queue size: ${this.audioQueue.length}`)
 
       // 自動再生開始
-      if (!this.isPlaying && !this.isPaused) {
+      if (!this.isPlaying) {
         log('Starting automatic playback')
         this.play()
       }
@@ -94,20 +92,13 @@ export class AudioPlayer {
    */
   play(): void {
     log(
-      'play() called, isPaused:',
-      this.isPaused,
-      'isPlaying:',
+      'play() called, isPlaying:',
       this.isPlaying,
       'queue length:',
       this.audioQueue.length,
     )
 
-    if (this.isPaused) {
-      // 一時停止からの再開
-      log('Resuming from pause')
-      this.audioContext.resume()
-      this.isPaused = false
-    } else if (!this.isPlaying && this.audioQueue.length > 0) {
+    if (!this.isPlaying && this.audioQueue.length > 0) {
       // 新規再生開始
       log('Starting new playback')
       this.isPlaying = true
@@ -116,17 +107,6 @@ export class AudioPlayer {
       this.scheduleNextBuffer()
     } else {
       log('Cannot play: already playing or queue empty')
-    }
-  }
-
-  /**
-   * 一時停止
-   */
-  pause(): void {
-    if (this.isPlaying && !this.isPaused) {
-      this.audioContext.suspend()
-      this.isPaused = true
-      this.pauseTime = this.audioContext.currentTime
     }
   }
 
@@ -141,9 +121,7 @@ export class AudioPlayer {
     }
     this.audioQueue = []
     this.isPlaying = false
-    this.isPaused = false
     this.nextStartTime = 0
-    this.pauseTime = 0
     this.startTime = 0
     log('Playback stopped')
   }
@@ -187,6 +165,7 @@ export class AudioPlayer {
     // 次のバッファの再生が終わったら、さらに次をスケジュール
     source.onended = () => {
       log(`Buffer #${this.totalBuffersPlayed} playback ended`)
+      this.currentSource = null
       this.scheduleNextBuffer()
     }
 

@@ -11,7 +11,10 @@ import { HistoryPanel } from './components/HistoryPanel'
 import { useHistoryStore } from './stores/historyStore'
 import { useLanguageStore } from './stores/languageStore'
 import { LANGUAGE_OPTIONS } from './types/language'
-import { LanguageSwitch } from './components/LanguageSwitch'
+import { Play, Square, Settings } from 'lucide-react'
+import { VolumeControl } from './components/VolumeControl'
+import { SpeedControl } from './components/SpeedControl'
+import { LanguageFlag } from './components/LanguageFlag'
 
 // デバッグログの有効化
 const DEBUG = true
@@ -25,7 +28,6 @@ const error = (...args: unknown[]) => window.console.error('[App]', ...args)
 function App() {
   const [text, setText] = useState('')
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
   const audioPlayerRef = useRef<AudioPlayer | null>(null)
   const [volume, setVolume] = useState(50)
   const [showSettings, setShowSettings] = useState(false)
@@ -119,29 +121,9 @@ function App() {
         audioPlayerRef.current.stop()
       }
       setIsPlaying(false)
-      setIsPaused(false)
       log('Playback stopped')
     } catch (err) {
       error('停止エラー:', err)
-    }
-  }
-
-  const handlePause = async () => {
-    log('handlePause called, isPaused:', isPaused)
-    if (!audioPlayerRef.current) return
-
-    try {
-      if (isPaused) {
-        audioPlayerRef.current.play()
-        setIsPaused(false)
-        log('Playback resumed')
-      } else {
-        audioPlayerRef.current.pause()
-        log('Playback paused')
-        setIsPaused(true)
-      }
-    } catch (error) {
-      window.console.error('一時停止/再開エラー:', error)
     }
   }
 
@@ -222,7 +204,6 @@ function App() {
       const unlistenAudioComplete = await listen('audio-complete', async () => {
         log('Received audio-complete event')
         setIsPlaying(false)
-        setIsPaused(false)
       })
 
       const unlistenAudioError = await listen<string>(
@@ -231,7 +212,6 @@ function App() {
           error('音声エラー:', event.payload)
           window.alert(`音声エラー: ${event.payload}`)
           setIsPlaying(false)
-          setIsPaused(false)
         },
       )
 
@@ -271,7 +251,6 @@ function App() {
             audioPlayerRef.current.stop()
           }
           setIsPlaying(false)
-          setIsPaused(false)
 
           // 少し待機してから新しい読み上げを開始
           await new Promise((resolve) => window.setTimeout(resolve, 100))
@@ -343,88 +322,34 @@ function App() {
 
       <div className="controls">
         <button
-          className="btn btn-primary"
+          className="btn btn-primary icon-btn"
           onClick={handlePlay}
-          disabled={isPlaying}
+          disabled={isPlaying || !text.trim()}
+          title="読み上げ開始"
         >
-          {isPlaying ? '読み上げ中...' : '読み上げ開始'}
+          <Play size={24} />
         </button>
         <button
-          className="btn btn-secondary"
-          onClick={handlePause}
-          disabled={!isPlaying}
-        >
-          {isPaused ? '再開' : '一時停止'}
-        </button>
-        <button
-          className="btn btn-secondary"
+          className="btn btn-secondary icon-btn"
           onClick={handleStop}
           disabled={!isPlaying}
+          title="停止"
         >
-          停止
+          <Square size={20} />
         </button>
         <button
-          className="btn btn-settings"
+          className="btn btn-settings icon-btn"
           onClick={() => setShowSettings(!showSettings)}
+          title="設定"
         >
-          設定
+          <Settings size={20} />
         </button>
       </div>
 
-      <div className="audio-settings system-panel">
-        <div className="volume-container">
-          <label htmlFor="volume">音量: {volume}%</label>
-          <input
-            id="volume"
-            type="range"
-            min="0"
-            max="100"
-            value={volume}
-            onChange={(e) => setVolume(Number(e.target.value))}
-            className="volume-slider"
-          />
-          <div className="volume-indicator">
-            <div className="volume-bar" style={{ width: `${volume}%` }} />
-          </div>
-        </div>
-
-        <div className="voice-speed-container">
-          <label htmlFor="voice-speed">
-            音声速度:{' '}
-            {voiceSpeed !== null && voiceSpeed !== undefined
-              ? voiceSpeed > 0
-                ? `+${voiceSpeed.toFixed(1)}`
-                : voiceSpeed.toFixed(1)
-              : '0.0'}
-            <span
-              style={{ fontSize: '0.8em', color: '#666', marginLeft: '8px' }}
-            >
-              (
-              {voiceSpeed === -1
-                ? '最遅'
-                : voiceSpeed === -0.5
-                  ? '遅い'
-                  : voiceSpeed === 0
-                    ? '標準'
-                    : voiceSpeed === 0.5
-                      ? '速い'
-                      : '最速'}
-              )
-            </span>
-          </label>
-          <input
-            id="voice-speed"
-            type="range"
-            min="-1"
-            max="1"
-            step="0.1"
-            value={voiceSpeed}
-            onChange={(e) => setVoiceSpeed(Number(e.target.value))}
-            className="voice-speed-slider"
-          />
-        </div>
-
-        <LanguageSwitch />
+      <div className="audio-controls">
+        <VolumeControl volume={volume} onChange={setVolume} />
+        <SpeedControl speed={voiceSpeed} onChange={setVoiceSpeed} />
+        <LanguageFlag />
       </div>
 
       {showSettings && (

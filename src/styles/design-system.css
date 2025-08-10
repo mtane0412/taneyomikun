@@ -9,13 +9,13 @@
   --system-background: #ffffff;
   --system-background-secondary: #f5f5f7;
   --system-background-tertiary: #f0f0f2;
-  
+
   /* テキストカラー */
   --system-label: #000000;
   --system-label-secondary: #3c3c43;
   --system-label-tertiary: #48484a;
   --system-label-quaternary: #636366;
-  
+
   /* アクセントカラー */
   --system-blue: #007aff;
   --system-blue-hover: #0051d5;
@@ -23,21 +23,26 @@
   --system-green: #34c759;
   --system-orange: #ff9500;
   --system-purple: #af52de;
-  
+
   /* コンポーネントカラー */
   --system-separator: rgba(60, 60, 67, 0.12);
   --system-fill: rgba(120, 120, 128, 0.08);
   --system-fill-secondary: rgba(120, 120, 128, 0.16);
   --system-fill-tertiary: rgba(120, 120, 128, 0.24);
-  
+
   /* エフェクト */
-  --system-shadow-small: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.12);
-  --system-shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
-  --system-shadow-large: 0 10px 20px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08);
-  
+  --system-shadow-small:
+    0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.12);
+  --system-shadow-medium:
+    0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --system-shadow-large:
+    0 10px 20px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08);
+
   /* タイポグラフィ */
-  --system-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
-  
+  --system-font:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text',
+    'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+
   /* アニメーション */
   --system-animation-fast: 150ms;
   --system-animation-normal: 250ms;
@@ -51,12 +56,12 @@
     --system-background: #000000;
     --system-background-secondary: #1c1c1e;
     --system-background-tertiary: #2c2c2e;
-    
+
     --system-label: #ffffff;
     --system-label-secondary: #ebebf5;
     --system-label-tertiary: #c7c7cc;
     --system-label-quaternary: #8e8e93;
-    
+
     --system-separator: rgba(84, 84, 88, 0.6);
     --system-fill: rgba(120, 120, 128, 0.18);
     --system-fill-secondary: rgba(120, 120, 128, 0.32);
@@ -325,7 +330,8 @@
 }
 
 @keyframes bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -343,9 +349,10 @@
 }
 
 .transition-colors {
-  transition: background-color var(--system-animation-fast) var(--system-easing),
-              color var(--system-animation-fast) var(--system-easing),
-              border-color var(--system-animation-fast) var(--system-easing);
+  transition:
+    background-color var(--system-animation-fast) var(--system-easing),
+    color var(--system-animation-fast) var(--system-easing),
+    border-color var(--system-animation-fast) var(--system-easing);
 }
 
 .transition-transform {
@@ -361,7 +368,7 @@
   .system-title-large {
     font-size: 28px;
   }
-  
+
   .system-title {
     font-size: 24px;
   }
