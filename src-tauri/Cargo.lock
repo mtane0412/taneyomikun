@@ -3,6 +3,31 @@
 version = 3
 
 [[package]]
+name = "Taneyomi-kun"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "base64 0.22.1",
+ "env_logger",
+ "futures-util",
+ "keyring",
+ "log",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-autostart",
+ "tauri-plugin-shell",
+ "tokio",
+ "tokio-tungstenite",
+ "tower",
+ "tower-http",
+ "uuid",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3879,31 +3904,6 @@ dependencies = [
  "pkg-config",
  "toml 0.8.2",
  "version-compare",
-]
-
-[[package]]
-name = "taneyomikun"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "axum",
- "base64 0.22.1",
- "env_logger",
- "futures-util",
- "keyring",
- "log",
- "reqwest",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-autostart",
- "tauri-plugin-shell",
- "tokio",
- "tokio-tungstenite",
- "tower",
- "tower-http",
- "uuid",
 ]
 
 [[package]]

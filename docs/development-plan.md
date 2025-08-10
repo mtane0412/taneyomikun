@@ -123,7 +123,7 @@
 
 ### ディレクトリ構造
 ```
-taneyomikun/
+Taneyomi-kun/
 ├── src/                    # フロントエンドソース
 │   ├── components/         # UIコンポーネント
 │   ├── hooks/             # カスタムフック
@@ -235,7 +235,7 @@ taneyomikun/
 - Tauri v2 + React + TypeScript環境のセットアップ完了
 - プロジェクト構造の確立
 - ESLint/Prettier設定完了
-- 基本的なReactアプリケーション（タネヨミくん）のUIを作成
+- 基本的なReactアプリケーション（Taneyomi-kun）のUIを作成
 
 ## リリース計画
 

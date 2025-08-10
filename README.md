@@ -1,4 +1,4 @@
-# タネヨミくん
+# Taneyomi-kun
 
 音声読み上げデスクトップアプリケーション - Tauri v2 + React + TypeScript
 
@@ -72,7 +72,7 @@ curl http://localhost:50080/health
 
 ## プロジェクト構造
 ```
-taneyomikun/
+Taneyomi-kun/
 ├── src/                    # フロントエンドソース
 │   ├── components/         # UIコンポーネント
 │   ├── hooks/             # カスタムフック

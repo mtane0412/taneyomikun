@@ -25,6 +25,7 @@ impl Default for HttpServerConfig {
 pub type SharedConfig = Arc<RwLock<HttpServerConfig>>;
 
 impl HttpServerConfig {
+    #[allow(dead_code)]
     pub fn new(port: u16, enabled: bool) -> Self {
         Self { port, enabled }
     }
@@ -32,8 +33,6 @@ impl HttpServerConfig {
     pub fn validate_port(port: u16) -> Result<(), String> {
         if port < 1024 {
             Err("ポート番号は1024以上を指定してください".to_string())
-        } else if port > 65535 {
-            Err("ポート番号は65535以下を指定してください".to_string())
         } else {
             Ok(())
         }

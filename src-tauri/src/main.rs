@@ -6,5 +6,5 @@
 **/
 
 fn main() {
-    taneyomikun_lib::run()
+    taneyomi_kun_lib::run()
 }

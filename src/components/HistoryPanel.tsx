@@ -17,13 +17,13 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
   items,
   onClear,
   onRemove,
-  onReplay
+  onReplay,
 }) => {
   const formatTime = (date: Date) => {
     return new Date(date).toLocaleTimeString('ja-JP', {
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
+      second: '2-digit',
     })
   }
 
@@ -50,7 +50,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
           履歴をクリア
         </button>
       </div>
-      
+
       {items.length === 0 ? (
         <div className="history-empty">
           <p>履歴がありません</p>
@@ -60,8 +60,12 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
           {items.map((item) => (
             <div key={item.id} className="history-item">
               <div className="history-item-header">
-                <span className="history-time">{formatTime(item.timestamp)}</span>
-                <span className="history-status">{getStatusIcon(item.status)}</span>
+                <span className="history-time">
+                  {formatTime(item.timestamp)}
+                </span>
+                <span className="history-status">
+                  {getStatusIcon(item.status)}
+                </span>
               </div>
               <div className="history-item-text">{item.text}</div>
               <div className="history-item-actions">

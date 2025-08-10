@@ -13,12 +13,12 @@ pub struct ApiKeyStorage;
 
 impl ApiKeyStorage {
     fn get_storage_path() -> TTSResult<PathBuf> {
-        // ホームディレクトリの.taneyomikun以下に保存
+        // ホームディレクトリの.Taneyomi-kun以下に保存
         let home_dir = std::env::var("HOME")
             .or_else(|_| std::env::var("USERPROFILE"))
             .map_err(|_| TTSError::ConfigError("ホームディレクトリが見つかりません".to_string()))?;
             
-        let app_dir = PathBuf::from(home_dir).join(".taneyomikun");
+        let app_dir = PathBuf::from(home_dir).join(".Taneyomi-kun");
         
         // ディレクトリが存在しない場合は作成
         if !app_dir.exists() {

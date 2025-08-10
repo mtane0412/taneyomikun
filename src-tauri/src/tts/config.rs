@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use super::error::{TTSError, TTSResult};
 
-const SERVICE_NAME: &str = "taneyomikun";
+const SERVICE_NAME: &str = "Taneyomi-kun";
 const API_KEY_NAME: &str = "cartesia_api_key";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

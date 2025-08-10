@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-タネヨミくん - 音声読み上げデスクトップアプリケーション
+Taneyomi-kun - 音声読み上げデスクトップアプリケーション
 - Tauri v2 + React + TypeScriptで開発
 - Cartesia TTS APIを使用した音声合成機能を実装予定
 

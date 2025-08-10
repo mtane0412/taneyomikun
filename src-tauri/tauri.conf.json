@@ -1,7 +1,7 @@
 {
-  "productName": "taneyomikun",
+  "productName": "Taneyomi-kun",
   "version": "0.1.0",
-  "identifier": "com.taneyomikun.app",
+  "identifier": "com.Taneyomi-kun.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "タネヨミくん",
+        "title": "Taneyomi-kun",
         "width": 800,
         "height": 600
       }

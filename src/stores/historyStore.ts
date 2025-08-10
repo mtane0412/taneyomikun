@@ -21,18 +21,18 @@ interface HistoryStore {
   removeItem: (id: string) => void
 }
 
-export const useHistoryStore = create<HistoryStore>((set, get) => ({
+export const useHistoryStore = create<HistoryStore>((set) => ({
   items: [],
   maxItems: 100, // 最大100件まで保持
-  
+
   addItem: (text: string) => {
     const newItem: HistoryItem = {
       id: Date.now().toString(),
       text,
       timestamp: new Date(),
-      status: 'processing'
+      status: 'processing',
     }
-    
+
     set((state) => {
       const newItems = [newItem, ...state.items]
       // 最大件数を超えたら古いものを削除
@@ -41,25 +41,25 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
       }
       return { items: newItems }
     })
-    
+
     return newItem
   },
-  
+
   updateStatus: (id: string, status: HistoryItem['status']) => {
     set((state) => ({
       items: state.items.map((item) =>
-        item.id === id ? { ...item, status } : item
-      )
+        item.id === id ? { ...item, status } : item,
+      ),
     }))
   },
-  
+
   clearHistory: () => {
     set({ items: [] })
   },
-  
+
   removeItem: (id: string) => {
     set((state) => ({
-      items: state.items.filter((item) => item.id !== id)
+      items: state.items.filter((item) => item.id !== id),
     }))
-  }
+  },
 }))

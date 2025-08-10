@@ -7,7 +7,6 @@ import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import * as tts from './utils/tts'
 import { AudioPlayer } from './utils/audioPlayer'
-import { HistoryPanel } from './components/HistoryPanel'
 import { useHistoryStore } from './stores/historyStore'
 
 // デバッグログの有効化
@@ -29,7 +28,6 @@ function App() {
   const [apiKey, setApiKey] = useState('')
   const [speed, setSpeed] = useState(1.0)
   const [hasApiKey, setHasApiKey] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
   const historyStore = useHistoryStore()
   const [httpPort, setHttpPort] = useState(50080)
   const [httpEnabled, setHttpEnabled] = useState(true)
@@ -215,42 +213,42 @@ function App() {
 
       // HTTPリクエストのイベントリスナー
       log('Setting up http-tts-request listener')
-      const unlistenHttpRequest = await listen<{ text: string; priority?: string }>(
-        'http-tts-request',
-        async (event) => {
-          window.console.log('[App] Received HTTP TTS request:', event.payload)
-          log('Received HTTP TTS request:', event.payload)
-          
-          // 履歴に追加
-          const historyItem = historyStore.addItem(event.payload.text)
-          window.console.log('[App] Added to history:', historyItem)
-          window.console.log('[App] Has API key:', hasApiKeyRef.current)
-          
-          // 即座に読み上げ開始（現在の読み上げがあれば中断）
-          try {
-            // 現在再生中の音声を停止
-            window.console.log('[App] Stopping current playback...')
-            await tts.stopSpeech()
-            if (audioPlayerRef.current) {
-              audioPlayerRef.current.stop()
-            }
-            setIsPlaying(false)
-            setIsPaused(false)
-            
-            // 少し待機してから新しい読み上げを開始
-            await new Promise(resolve => setTimeout(resolve, 100))
-            
-            window.console.log('[App] Starting new playback...')
-            await playText(event.payload.text)
-            window.console.log('[App] Playback completed')
-            historyStore.updateStatus(historyItem.id, 'completed')
-          } catch (err) {
-            window.console.error('[App] Playback error:', err)
-            error('Playback error:', err)
-            historyStore.updateStatus(historyItem.id, 'error')
+      const unlistenHttpRequest = await listen<{
+        text: string
+        priority?: string
+      }>('http-tts-request', async (event) => {
+        window.console.log('[App] Received HTTP TTS request:', event.payload)
+        log('Received HTTP TTS request:', event.payload)
+
+        // 履歴に追加
+        const historyItem = historyStore.addItem(event.payload.text)
+        window.console.log('[App] Added to history:', historyItem)
+        window.console.log('[App] Has API key:', hasApiKeyRef.current)
+
+        // 即座に読み上げ開始（現在の読み上げがあれば中断）
+        try {
+          // 現在再生中の音声を停止
+          window.console.log('[App] Stopping current playback...')
+          await tts.stopSpeech()
+          if (audioPlayerRef.current) {
+            audioPlayerRef.current.stop()
           }
-        },
-      )
+          setIsPlaying(false)
+          setIsPaused(false)
+
+          // 少し待機してから新しい読み上げを開始
+          await new Promise((resolve) => window.setTimeout(resolve, 100))
+
+          window.console.log('[App] Starting new playback...')
+          await playText(event.payload.text)
+          window.console.log('[App] Playback completed')
+          historyStore.updateStatus(historyItem.id, 'completed')
+        } catch (err) {
+          window.console.error('[App] Playback error:', err)
+          error('Playback error:', err)
+          historyStore.updateStatus(historyItem.id, 'error')
+        }
+      })
       log('http-tts-request listener registered successfully')
 
       // クリーンアップ
@@ -275,7 +273,7 @@ function App() {
 
   return (
     <div className="container">
-      <h1>タネヨミくん</h1>
+      <h1>Taneyomi-kun</h1>
       <p>音声読み上げアプリケーション</p>
 
       <div className="text-area-container">
@@ -315,25 +313,6 @@ function App() {
           onClick={() => setShowSettings(!showSettings)}
         >
           ⚙️ 設定
-        </button>
-        <button
-          className="btn btn-secondary"
-          onClick={() => setShowHistory(!showHistory)}
-        >
-          📋 履歴 ({historyStore.items.length})
-        </button>
-        <button
-          className="btn btn-secondary"
-          onClick={async () => {
-            try {
-              const result = await invoke('test_event_emit')
-              log('Test event result:', result)
-            } catch (err) {
-              error('Test event error:', err)
-            }
-          }}
-        >
-          🧪 テスト
         </button>
       </div>
 
@@ -417,13 +396,25 @@ function App() {
             <label htmlFor="http-enabled">
               HTTPサーバー
               {httpEnabled && (
-                <span style={{ marginLeft: '8px', color: '#4CAF50', fontSize: '0.9em' }}>
+                <span
+                  style={{
+                    marginLeft: '8px',
+                    color: '#4CAF50',
+                    fontSize: '0.9em',
+                  }}
+                >
                   ✓ 有効 (ポート: {httpPort})
                 </span>
               )}
             </label>
             <div style={{ marginBottom: '12px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', fontSize: '0.9em' }}>
+              <label
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  fontSize: '0.9em',
+                }}
+              >
                 <input
                   id="http-enabled"
                   type="checkbox"
@@ -449,8 +440,8 @@ function App() {
                 className="input-field"
                 style={{ width: '100px' }}
               />
-              <button 
-                className="btn btn-secondary" 
+              <button
+                className="btn btn-secondary"
                 onClick={handleSaveHttpConfig}
                 disabled={!httpEnabled}
               >
@@ -459,7 +450,8 @@ function App() {
             </div>
             {httpEnabled && (
               <p style={{ fontSize: '0.8em', color: '#666', marginTop: '8px' }}>
-                http://localhost:{httpPort}/tts にPOSTリクエストで文字列を送信できます
+                http://localhost:{httpPort}/tts
+                にPOSTリクエストで文字列を送信できます
               </p>
             )}
           </div>
@@ -471,32 +463,6 @@ function App() {
             閉じる
           </button>
         </div>
-      )}
-
-      {showHistory && (
-        <HistoryPanel
-          items={historyStore.items}
-          onClear={() => {
-            if (window.confirm('すべての履歴を削除しますか？')) {
-              historyStore.clearHistory()
-            }
-          }}
-          onRemove={(id) => {
-            historyStore.removeItem(id)
-          }}
-          onReplay={async (item) => {
-            if (isPlaying) {
-              await handleStop()
-            }
-            const newItem = historyStore.addItem(item.text)
-            try {
-              await playText(item.text)
-              historyStore.updateStatus(newItem.id, 'completed')
-            } catch (err) {
-              historyStore.updateStatus(newItem.id, 'error')
-            }
-          }}
-        />
       )}
     </div>
   )
