@@ -30,18 +30,18 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
   const getStatusIcon = (status: HistoryItem['status']) => {
     switch (status) {
       case 'completed':
-        return '✅'
+        return '✓'
       case 'error':
-        return '❌'
+        return '✕'
       case 'processing':
-        return '🔄'
+        return '↻'
     }
   }
 
   return (
-    <div className="history-panel">
+    <div className="history-panel animate-fade-in">
       <div className="history-header">
-        <h3>読み上げ履歴</h3>
+        <h3 className="system-headline">読み上げ履歴</h3>
         <button
           className="btn btn-secondary"
           onClick={onClear}
@@ -58,7 +58,7 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
       ) : (
         <div className="history-list">
           {items.map((item) => (
-            <div key={item.id} className="history-item">
+            <div key={item.id} className="history-item animate-slide-in">
               <div className="history-item-header">
                 <span className="history-time">
                   {formatTime(item.timestamp)}
@@ -67,7 +67,9 @@ export const HistoryPanel: React.FC<HistoryPanelProps> = ({
                   {getStatusIcon(item.status)}
                 </span>
               </div>
-              <div className="history-item-text">{item.text}</div>
+              <div className="history-item-text system-body-secondary">
+                {item.text}
+              </div>
               <div className="history-item-actions">
                 {onReplay && item.status !== 'processing' && (
                   <button

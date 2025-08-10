@@ -1,0 +1,149 @@
+/**
+ * 言語切り替えスイッチのスタイル
+ * 国旗アイコンを使用したAppleスタイルのスイッチUI
+ */
+
+.language-switch-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.language-switch {
+  position: relative;
+  width: 280px;
+  height: 60px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+
+.language-switch:focus-visible {
+  outline: 2px solid var(--system-blue);
+  outline-offset: 2px;
+  border-radius: 30px;
+}
+
+.language-switch-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: var(--system-fill-secondary);
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.language-switch-options {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.language-option {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 20px;
+  transition: all var(--system-animation-normal) var(--system-easing);
+  opacity: 0;
+  transform: translateX(0);
+}
+
+.language-option.active {
+  opacity: 1;
+}
+
+.language-option.active::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  background: var(--system-background);
+  border-radius: 26px;
+  box-shadow: var(--system-shadow-small);
+  z-index: -1;
+}
+
+.flag-icon {
+  font-size: 32px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.language-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--system-label);
+  z-index: 1;
+}
+
+.language-hint {
+  font-size: 13px;
+  color: var(--system-label-secondary);
+  text-align: center;
+}
+
+/* ホバーエフェクト */
+.language-switch:hover .language-switch-track {
+  background: var(--system-fill-tertiary);
+}
+
+.language-switch:active .language-option.active::before {
+  transform: scale(0.95);
+}
+
+/* コンパクトモード */
+.language-switch-compact {
+  width: 80px;
+  height: 50px;
+}
+
+.language-switch-compact .language-name {
+  display: none;
+}
+
+.language-switch-compact .flag-icon {
+  font-size: 28px;
+}
+
+/* アニメーション */
+@keyframes slideInFlag {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.language-option {
+  animation: slideInFlag var(--system-animation-fast) var(--system-easing);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+  .language-switch {
+    width: 220px;
+    height: 50px;
+  }
+  
+  .flag-icon {
+    font-size: 24px;
+  }
+  
+  .language-name {
+    font-size: 14px;
+  }
+}

@@ -10,7 +10,8 @@ import { AudioPlayer } from './utils/audioPlayer'
 import { HistoryPanel } from './components/HistoryPanel'
 import { useHistoryStore } from './stores/historyStore'
 import { useLanguageStore } from './stores/languageStore'
-import { LANGUAGE_OPTIONS, Language } from './types/language'
+import { LANGUAGE_OPTIONS } from './types/language'
+import { LanguageSwitch } from './components/LanguageSwitch'
 
 // デバッグログの有効化
 const DEBUG = true
@@ -318,8 +319,17 @@ function App() {
 
   return (
     <div className="container">
-      <h1>Taneyomi-kun</h1>
-      <p>音声読み上げアプリケーション</p>
+      <h1 className="system-title-large">Taneyomi-kun</h1>
+      <p
+        className="system-body-secondary"
+        style={{
+          marginTop: '-16px',
+          marginBottom: '32px',
+          color: 'var(--system-label-secondary)',
+        }}
+      >
+        音声読み上げアプリケーション
+      </p>
 
       <div className="text-area-container">
         <textarea
@@ -357,11 +367,11 @@ function App() {
           className="btn btn-settings"
           onClick={() => setShowSettings(!showSettings)}
         >
-          ⚙️ 設定
+          設定
         </button>
       </div>
 
-      <div className="audio-settings">
+      <div className="audio-settings system-panel">
         <div className="volume-container">
           <label htmlFor="volume">音量: {volume}%</label>
           <input
@@ -414,35 +424,12 @@ function App() {
           />
         </div>
 
-        <div className="language-container">
-          <label htmlFor="language">言語:</label>
-          <select
-            id="language"
-            value={languageStore.language}
-            onChange={(e) =>
-              languageStore.setLanguage(e.target.value as Language)
-            }
-            className="language-select"
-            style={{
-              padding: '4px 8px',
-              borderRadius: '4px',
-              border: '1px solid #ccc',
-              fontSize: '14px',
-              cursor: 'pointer',
-            }}
-          >
-            {LANGUAGE_OPTIONS.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-        </div>
+        <LanguageSwitch />
       </div>
 
       {showSettings && (
-        <div className="settings-panel">
-          <h2>設定</h2>
+        <div className="settings-panel animate-fade-in">
+          <h2 className="system-headline">設定</h2>
 
           <div className="settings-group">
             <label htmlFor="api-key">
@@ -550,12 +537,14 @@ function App() {
             )}
           </div>
 
-          <button
-            className="btn btn-primary"
-            onClick={() => setShowSettings(false)}
-          >
-            閉じる
-          </button>
+          <div style={{ textAlign: 'center', marginTop: '32px' }}>
+            <button
+              className="btn btn-primary"
+              onClick={() => setShowSettings(false)}
+            >
+              閉じる
+            </button>
+          </div>
         </div>
       )}
 

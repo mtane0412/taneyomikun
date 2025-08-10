@@ -1,0 +1,368 @@
+/**
+ * Appleのデザインシステムに基づいたスタイル定義
+ * macOSアプリケーションのような洗練されたUIを実現
+ **/
+
+/* カラーパレット */
+:root {
+  /* システムカラー */
+  --system-background: #ffffff;
+  --system-background-secondary: #f5f5f7;
+  --system-background-tertiary: #f0f0f2;
+  
+  /* テキストカラー */
+  --system-label: #000000;
+  --system-label-secondary: #3c3c43;
+  --system-label-tertiary: #48484a;
+  --system-label-quaternary: #636366;
+  
+  /* アクセントカラー */
+  --system-blue: #007aff;
+  --system-blue-hover: #0051d5;
+  --system-red: #ff3b30;
+  --system-green: #34c759;
+  --system-orange: #ff9500;
+  --system-purple: #af52de;
+  
+  /* コンポーネントカラー */
+  --system-separator: rgba(60, 60, 67, 0.12);
+  --system-fill: rgba(120, 120, 128, 0.08);
+  --system-fill-secondary: rgba(120, 120, 128, 0.16);
+  --system-fill-tertiary: rgba(120, 120, 128, 0.24);
+  
+  /* エフェクト */
+  --system-shadow-small: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.12);
+  --system-shadow-medium: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --system-shadow-large: 0 10px 20px rgba(0, 0, 0, 0.1), 0 4px 8px rgba(0, 0, 0, 0.08);
+  
+  /* タイポグラフィ */
+  --system-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  
+  /* アニメーション */
+  --system-animation-fast: 150ms;
+  --system-animation-normal: 250ms;
+  --system-animation-slow: 350ms;
+  --system-easing: cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+/* ダークモード */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --system-background: #000000;
+    --system-background-secondary: #1c1c1e;
+    --system-background-tertiary: #2c2c2e;
+    
+    --system-label: #ffffff;
+    --system-label-secondary: #ebebf5;
+    --system-label-tertiary: #c7c7cc;
+    --system-label-quaternary: #8e8e93;
+    
+    --system-separator: rgba(84, 84, 88, 0.6);
+    --system-fill: rgba(120, 120, 128, 0.18);
+    --system-fill-secondary: rgba(120, 120, 128, 0.32);
+    --system-fill-tertiary: rgba(120, 120, 128, 0.45);
+  }
+}
+
+/* タイポグラフィ */
+.system-title-large {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.system-title {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.system-headline {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.01em;
+}
+
+.system-body {
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.system-body-secondary {
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+}
+
+.system-caption {
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+/* ボタン */
+.system-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-size: 15px;
+  font-weight: 500;
+  font-family: var(--system-font);
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  transition: all var(--system-animation-fast) var(--system-easing);
+  position: relative;
+  overflow: hidden;
+}
+
+.system-button:active {
+  transform: scale(0.97);
+}
+
+.system-button-primary {
+  background: var(--system-blue);
+  color: white;
+}
+
+.system-button-primary:hover {
+  background: var(--system-blue-hover);
+}
+
+.system-button-secondary {
+  background: var(--system-fill-secondary);
+  color: var(--system-label);
+}
+
+.system-button-secondary:hover {
+  background: var(--system-fill-tertiary);
+}
+
+.system-button-danger {
+  background: var(--system-red);
+  color: white;
+}
+
+.system-button-danger:hover {
+  background: #e6342b;
+}
+
+/* フォーム要素 */
+.system-input {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 17px;
+  font-family: var(--system-font);
+  color: var(--system-label);
+  background: var(--system-background);
+  border: 1px solid var(--system-separator);
+  border-radius: 10px;
+  outline: none;
+  transition: all var(--system-animation-fast) var(--system-easing);
+}
+
+.system-input:focus {
+  border-color: var(--system-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+.system-textarea {
+  width: 100%;
+  padding: 12px;
+  font-size: 17px;
+  font-family: var(--system-font);
+  color: var(--system-label);
+  background: var(--system-background);
+  border: 1px solid var(--system-separator);
+  border-radius: 10px;
+  outline: none;
+  resize: vertical;
+  min-height: 120px;
+  transition: all var(--system-animation-fast) var(--system-easing);
+}
+
+.system-textarea:focus {
+  border-color: var(--system-blue);
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.15);
+}
+
+/* スライダー */
+.system-slider {
+  width: 100%;
+  height: 4px;
+  background: var(--system-fill-secondary);
+  border-radius: 2px;
+  outline: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.system-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: var(--system-shadow-small);
+  cursor: pointer;
+  transition: all var(--system-animation-fast) var(--system-easing);
+}
+
+.system-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: var(--system-shadow-medium);
+}
+
+/* カード */
+.system-card {
+  background: var(--system-background);
+  border-radius: 12px;
+  box-shadow: var(--system-shadow-small);
+  overflow: hidden;
+  transition: all var(--system-animation-normal) var(--system-easing);
+}
+
+.system-card:hover {
+  box-shadow: var(--system-shadow-medium);
+}
+
+/* パネル */
+.system-panel {
+  background: var(--system-background-secondary);
+  border-radius: 12px;
+  padding: 20px;
+  backdrop-filter: blur(20px);
+}
+
+/* セパレーター */
+.system-separator {
+  height: 1px;
+  background: var(--system-separator);
+  border: none;
+  margin: 16px 0;
+}
+
+/* バッジ */
+.system-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 4px;
+  background: var(--system-fill-secondary);
+  color: var(--system-label-secondary);
+}
+
+.system-badge-success {
+  background: var(--system-green);
+  color: white;
+}
+
+.system-badge-error {
+  background: var(--system-red);
+  color: white;
+}
+
+.system-badge-info {
+  background: var(--system-blue);
+  color: white;
+}
+
+/* アニメーション */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn var(--system-animation-normal) var(--system-easing);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn var(--system-animation-normal) var(--system-easing);
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s var(--system-easing) infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-bounce {
+  animation: bounce 1s var(--system-easing) infinite;
+}
+
+/* トランジション */
+.transition-all {
+  transition: all var(--system-animation-normal) var(--system-easing);
+}
+
+.transition-colors {
+  transition: background-color var(--system-animation-fast) var(--system-easing),
+              color var(--system-animation-fast) var(--system-easing),
+              border-color var(--system-animation-fast) var(--system-easing);
+}
+
+.transition-transform {
+  transition: transform var(--system-animation-fast) var(--system-easing);
+}
+
+.transition-opacity {
+  transition: opacity var(--system-animation-normal) var(--system-easing);
+}
+
+/* レスポンシブユーティリティ */
+@media (max-width: 768px) {
+  .system-title-large {
+    font-size: 28px;
+  }
+  
+  .system-title {
+    font-size: 24px;
+  }
+}
