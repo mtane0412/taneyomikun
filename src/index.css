@@ -23,11 +23,18 @@
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  padding: 0;
+  width: 100%;
   min-height: 100vh;
   background: var(--system-background);
+}
+
+#root {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 h1 {
@@ -39,10 +46,12 @@ h1 {
 }
 
 .container {
-  max-width: 720px;
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  box-sizing: border-box;
 }
 
 .text-area-container {
@@ -72,15 +81,9 @@ h1 {
   display: flex;
   gap: 12px;
   justify-content: center;
-  flex-wrap: wrap;
+  align-items: center;
 }
 
-.audio-controls {
-  display: flex;
-  gap: 8px;
-  justify-content: center;
-  margin: 16px 0;
-}
 
 .btn {
   display: inline-flex;

@@ -288,6 +288,9 @@ function App() {
         >
           <Square size={20} />
         </button>
+        <VolumeControl volume={volume} onChange={setVolume} />
+        <SpeedControl speed={voiceSpeed} onChange={setVoiceSpeed} />
+        <LanguageFlag />
         <button
           className="btn btn-settings icon-btn"
           onClick={() => setShowSettings(!showSettings)}
@@ -295,12 +298,6 @@ function App() {
         >
           <Settings size={20} />
         </button>
-      </div>
-
-      <div className="audio-controls">
-        <VolumeControl volume={volume} onChange={setVolume} />
-        <SpeedControl speed={voiceSpeed} onChange={setVoiceSpeed} />
-        <LanguageFlag />
       </div>
 
       <SettingsModal
