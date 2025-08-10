@@ -29,6 +29,7 @@ function App() {
   const [apiKey, setApiKey] = useState('')
   const [speed, setSpeed] = useState(1.0)
   const [hasApiKey, setHasApiKey] = useState(false)
+  const [voiceSpeed, setVoiceSpeed] = useState(0)
   const historyStore = useHistoryStore()
   const [httpPort, setHttpPort] = useState(50080)
   const [httpEnabled, setHttpEnabled] = useState(true)
@@ -57,7 +58,10 @@ function App() {
         speed,
         volume: volume / 100,
         language: 'ja',
+        voice_speed: voiceSpeed,
       }
+      log('TTS config to be sent:', config)
+      window.console.log('[App] TTS config:', config)
       await tts.updateTTSConfig(config)
 
       // 音声プレイヤーを初期化
@@ -217,14 +221,23 @@ function App() {
       const unlistenHttpRequest = await listen<{
         text: string
         priority?: string
+        voice_speed?: number
       }>('http-tts-request', async (event) => {
         window.console.log('[App] Received HTTP TTS request:', event.payload)
+        window.console.log('[App] Current voiceSpeed:', voiceSpeed)
         log('Received HTTP TTS request:', event.payload)
+        log('Current voiceSpeed:', voiceSpeed)
 
         // 履歴に追加
         const historyItem = historyStore.addItem(event.payload.text)
         window.console.log('[App] Added to history:', historyItem)
         window.console.log('[App] Has API key:', hasApiKeyRef.current)
+
+        // HTTPリクエストからvoice_speedを一時的に設定（未指定の場合は現在の設定値を使用）
+        const originalVoiceSpeed = voiceSpeed
+        if (event.payload.voice_speed !== undefined && event.payload.voice_speed !== null) {
+          setVoiceSpeed(event.payload.voice_speed)
+        }
 
         // 即座に読み上げ開始（現在の読み上げがあれば中断）
         try {
@@ -248,6 +261,11 @@ function App() {
           window.console.error('[App] Playback error:', err)
           error('Playback error:', err)
           historyStore.updateStatus(historyItem.id, 'error')
+        } finally {
+          // 元の設定に戻す
+          if (event.payload.voice_speed !== undefined && event.payload.voice_speed !== null) {
+            setVoiceSpeed(originalVoiceSpeed)
+          }
         }
       })
       log('http-tts-request listener registered successfully')
@@ -317,19 +335,57 @@ function App() {
         </button>
       </div>
 
-      <div className="volume-container">
-        <label htmlFor="volume">音量: {volume}%</label>
-        <input
-          id="volume"
-          type="range"
-          min="0"
-          max="100"
-          value={volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
-          className="volume-slider"
-        />
-        <div className="volume-indicator">
-          <div className="volume-bar" style={{ width: `${volume}%` }} />
+      <div className="audio-settings">
+        <div className="volume-container">
+          <label htmlFor="volume">音量: {volume}%</label>
+          <input
+            id="volume"
+            type="range"
+            min="0"
+            max="100"
+            value={volume}
+            onChange={(e) => setVolume(Number(e.target.value))}
+            className="volume-slider"
+          />
+          <div className="volume-indicator">
+            <div className="volume-bar" style={{ width: `${volume}%` }} />
+          </div>
+        </div>
+
+        <div className="voice-speed-container">
+          <label htmlFor="voice-speed">
+            音声速度:{' '}
+            {voiceSpeed !== null && voiceSpeed !== undefined
+              ? voiceSpeed > 0
+                ? `+${voiceSpeed.toFixed(1)}`
+                : voiceSpeed.toFixed(1)
+              : '0.0'}
+            <span
+              style={{ fontSize: '0.8em', color: '#666', marginLeft: '8px' }}
+            >
+              (
+              {voiceSpeed === -1
+                ? '最遅'
+                : voiceSpeed === -0.5
+                  ? '遅い'
+                  : voiceSpeed === 0
+                    ? '標準'
+                    : voiceSpeed === 0.5
+                      ? '速い'
+                      : '最速'}
+              )
+            </span>
+          </label>
+          <input
+            id="voice-speed"
+            type="range"
+            min="-1"
+            max="1"
+            step="0.1"
+            value={voiceSpeed}
+            onChange={(e) => setVoiceSpeed(Number(e.target.value))}
+            className="voice-speed-slider"
+          />
         </div>
       </div>
 
@@ -380,7 +436,7 @@ function App() {
           </div>
 
           <div className="settings-group">
-            <label htmlFor="speed">読み上げ速度: {speed.toFixed(1)}x</label>
+            <label htmlFor="speed">再生速度: {speed.toFixed(1)}x</label>
             <input
               id="speed"
               type="range"
@@ -391,6 +447,9 @@ function App() {
               onChange={(e) => setSpeed(Number(e.target.value))}
               className="speed-slider"
             />
+            <p style={{ fontSize: '0.8em', color: '#666', marginTop: '4px' }}>
+              再生速度は音声の再生スピードを調整します（音声の生成には影響しません）
+            </p>
           </div>
 
           <div className="settings-group">

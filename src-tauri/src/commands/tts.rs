@@ -103,6 +103,7 @@ pub async fn update_tts_config(
     speed: Option<f32>,
     volume: Option<f32>,
     language: Option<String>,
+    voice_speed: Option<f32>,
 ) -> Result<(), String> {
     let mut config = state.config.lock().await;
     
@@ -120,6 +121,9 @@ pub async fn update_tts_config(
     }
     if let Some(language) = language {
         config.language = language;
+    }
+    if let Some(voice_speed) = voice_speed {
+        config.voice_speed = voice_speed.clamp(-1.0, 1.0);
     }
     
     Ok(())

@@ -515,3 +515,22 @@ hr {
     color: #666;
   }
 }
+
+/* 音声設定コンテナ */
+.audio-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin: 2rem 0;
+}
+
+/* 音声速度スライダー */
+.voice-speed-container {
+  text-align: left;
+}
+
+.voice-speed-slider {
+  width: 100%;
+  margin: 0.5rem 0;
+}
+

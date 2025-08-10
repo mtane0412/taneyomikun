@@ -11,6 +11,7 @@ export interface TTSConfig {
   speed: number
   volume: number
   language: string
+  voice_speed: number
 }
 
 export async function setApiKey(apiKey: string): Promise<void> {
@@ -34,6 +35,7 @@ export async function updateTTSConfig(
     speed: config.speed,
     volume: config.volume,
     language: config.language,
+    voiceSpeed: config.voice_speed,
   })
 }
 

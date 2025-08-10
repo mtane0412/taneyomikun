@@ -18,6 +18,7 @@ pub struct TTSConfig {
     pub speed: f32,
     pub volume: f32,
     pub language: String,
+    pub voice_speed: f32,  // Cartesia API speed parameter (-1.0 to 1.0)
 }
 
 impl Default for TTSConfig {
@@ -28,6 +29,7 @@ impl Default for TTSConfig {
             speed: 1.0,
             volume: 1.0,
             language: String::from("ja"),
+            voice_speed: 0.0,  // Default normal speed
         }
     }
 }
@@ -53,6 +55,12 @@ impl TTSConfig {
     #[allow(dead_code)]
     pub fn with_volume(mut self, volume: f32) -> Self {
         self.volume = volume.clamp(0.0, 1.0);
+        self
+    }
+
+    #[allow(dead_code)]
+    pub fn with_voice_speed(mut self, voice_speed: f32) -> Self {
+        self.voice_speed = voice_speed.clamp(-1.0, 1.0);
         self
     }
 }

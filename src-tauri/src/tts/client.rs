@@ -34,6 +34,14 @@ struct VoiceConfig {
     id: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     speed: Option<String>,
+    #[serde(rename = "__experimental_controls", skip_serializing_if = "Option::is_none")]
+    experimental_controls: Option<ExperimentalControls>,
+}
+
+#[derive(Debug, Serialize)]
+struct ExperimentalControls {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    speed: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -90,6 +98,13 @@ impl CartesiaClient {
                 mode: "id".to_string(),
                 id: self.config.voice_id.clone(),
                 speed: Some(format!("{:.1}", self.config.speed)),
+                experimental_controls: if self.config.voice_speed != 0.0 {
+                    Some(ExperimentalControls {
+                        speed: Some(format_voice_speed(self.config.voice_speed)),
+                    })
+                } else {
+                    None
+                },
             },
             output_format: OutputFormat {
                 container: "raw".to_string(),
@@ -100,8 +115,8 @@ impl CartesiaClient {
             stream: Some(true),
         };
         
-        info!("[TTS Client] Request - Voice: {}, Language: {}, Speed: {:.1}", 
-              self.config.voice_id, self.config.language, self.config.speed);
+        info!("[TTS Client] Request - Voice: {}, Language: {}, Speed: {:.1}, Voice Speed: {:.1}", 
+              self.config.voice_id, self.config.language, self.config.speed, self.config.voice_speed);
         debug!("[TTS Client] Text to synthesize: {}", text);
 
         let request_json = serde_json::to_string(&request)
@@ -166,6 +181,20 @@ impl CartesiaClient {
         }
 
         Ok(())
+    }
+}
+
+fn format_voice_speed(speed: f32) -> String {
+    if speed <= -1.0 {
+        "slowest".to_string()
+    } else if speed <= -0.5 {
+        "slow".to_string()
+    } else if speed <= 0.0 {
+        "normal".to_string()
+    } else if speed <= 0.5 {
+        "fast".to_string()
+    } else {
+        "fastest".to_string()
     }
 }
 
