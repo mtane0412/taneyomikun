@@ -262,53 +262,48 @@ function App() {
         音声読み上げアプリケーション
       </p>
 
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'center',
-          marginBottom: '16px',
-        }}
-      >
-        <ProfileIcon size={80} />
-      </div>
+      <div className="speech-bubble-container">
+        <div className="profile-icon-wrapper">
+          <ProfileIcon size={80} />
+        </div>
 
-      <div className="text-area-container">
-        <textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="読み上げたいテキストを入力してください..."
-          rows={5}
-          className="text-input"
-        />
-      </div>
+        <div className="speech-bubble">
+          <textarea
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="読み上げたいテキストを入力してください..."
+            rows={5}
+          />
 
-      <div className="controls">
-        <button
-          className="btn btn-primary icon-btn"
-          onClick={handlePlay}
-          disabled={isPlaying || !text.trim()}
-          title="読み上げ開始"
-        >
-          <Play size={24} />
-        </button>
-        <button
-          className="btn btn-secondary icon-btn"
-          onClick={handleStop}
-          disabled={!isPlaying}
-          title="停止"
-        >
-          <Square size={20} />
-        </button>
-        <VolumeControl volume={volume} onChange={setVolume} />
-        <SpeedControl speed={voiceSpeed} onChange={setVoiceSpeed} />
-        <LanguageFlag />
-        <button
-          className="btn btn-settings icon-btn"
-          onClick={() => setShowSettings(!showSettings)}
-          title="設定"
-        >
-          <Settings size={20} />
-        </button>
+          <div className="speech-bubble-controls">
+            <button
+              className="btn btn-primary icon-btn"
+              onClick={handlePlay}
+              disabled={isPlaying || !text.trim()}
+              title="読み上げ開始"
+            >
+              <Play size={24} />
+            </button>
+            <button
+              className="btn btn-secondary icon-btn"
+              onClick={handleStop}
+              disabled={!isPlaying}
+              title="停止"
+            >
+              <Square size={20} />
+            </button>
+            <VolumeControl volume={volume} onChange={setVolume} />
+            <SpeedControl speed={voiceSpeed} onChange={setVoiceSpeed} />
+            <LanguageFlag />
+            <button
+              className="btn btn-settings icon-btn"
+              onClick={() => setShowSettings(!showSettings)}
+              title="設定"
+            >
+              <Settings size={20} />
+            </button>
+          </div>
+        </div>
       </div>
 
       <SettingsModal

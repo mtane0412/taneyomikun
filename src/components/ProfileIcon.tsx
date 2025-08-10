@@ -21,7 +21,7 @@ export const ProfileIcon: React.FC<ProfileIconProps> = ({
         height: size,
         borderRadius: '50%',
         overflow: 'hidden',
-        backgroundColor: '#f0f0f0',
+        backgroundColor: 'var(--system-background-secondary)',
       }}
     >
       <img
