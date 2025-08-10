@@ -54,22 +54,30 @@ pub async fn handle_tts(
     // Tauriアプリケーションに読み上げイベントを送信
     let app_handle = state.app_handle.lock().await;
     
-    // キューに追加するイベントを送信
+    log::info!("Sending http-tts-request event with payload: {:?}", payload);
+    
+    // すべてのウィンドウにイベントを送信
     match app_handle.emit("http-tts-request", &payload) {
-        Ok(_) => (
+        Ok(_) => {
+            log::info!("Successfully emitted http-tts-request event");
+            (
             StatusCode::OK,
             Json(TtsResponse {
                 success: true,
                 message: "読み上げリクエストを受け付けました".to_string(),
             }),
-        ),
-        Err(e) => (
+        )
+        },
+        Err(e) => {
+            log::error!("Failed to emit http-tts-request event: {}", e);
+            (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(TtsResponse {
                 success: false,
                 message: format!("エラーが発生しました: {}", e),
             }),
-        ),
+        )
+        },
     }
 }
 

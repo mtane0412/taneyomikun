@@ -7,14 +7,17 @@ import { listen } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/core'
 import * as tts from './utils/tts'
 import { AudioPlayer } from './utils/audioPlayer'
-import { QueuePanel } from './components/QueuePanel'
-import { useQueueStore } from './hooks/useQueueStore'
-import { QueueItem, QueuePriority } from './stores/queueStore'
+import { HistoryPanel } from './components/HistoryPanel'
+import { useHistoryStore } from './stores/historyStore'
 
 // デバッグログの有効化
 const DEBUG = true
-const log = (...args: unknown[]) => DEBUG && console.log('[App]', ...args)
-const error = (...args: unknown[]) => console.error('[App]', ...args)
+const log = (...args: unknown[]) => {
+  if (DEBUG) {
+    window.console.log('[App]', ...args)
+  }
+}
+const error = (...args: unknown[]) => window.console.error('[App]', ...args)
 
 function App() {
   const [text, setText] = useState('')
@@ -26,14 +29,19 @@ function App() {
   const [apiKey, setApiKey] = useState('')
   const [speed, setSpeed] = useState(1.0)
   const [hasApiKey, setHasApiKey] = useState(false)
-  const [showQueue, setShowQueue] = useState(false)
-  const queueStore = useQueueStore()
-  const currentQueueItemRef = useRef<QueueItem | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
+  const historyStore = useHistoryStore()
   const [httpPort, setHttpPort] = useState(50080)
   const [httpEnabled, setHttpEnabled] = useState(true)
+  const hasApiKeyRef = useRef(false)
+
+  // hasApiKeyの変更をrefに反映
+  useEffect(() => {
+    hasApiKeyRef.current = hasApiKey
+  }, [hasApiKey])
 
   const playText = async (textToPlay: string) => {
-    if (!hasApiKey) {
+    if (!hasApiKeyRef.current) {
       window.alert('APIキーを設定してください')
       setShowSettings(true)
       return
@@ -193,26 +201,6 @@ function App() {
         log('Received audio-complete event')
         setIsPlaying(false)
         setIsPaused(false)
-
-        // 現在のキューアイテムを完了にマーク
-        if (currentQueueItemRef.current) {
-          queueStore.updateStatus(currentQueueItemRef.current.id, 'completed')
-          currentQueueItemRef.current = null
-        }
-
-        // 次のキューアイテムを自動再生
-        const nextItem = queueStore.getNext()
-        if (nextItem) {
-          log('Playing next queue item:', nextItem.text)
-          currentQueueItemRef.current = nextItem
-          queueStore.updateStatus(nextItem.id, 'processing')
-          try {
-            await playText(nextItem.text)
-          } catch {
-            queueStore.updateStatus(nextItem.id, 'error')
-            currentQueueItemRef.current = null
-          }
-        }
       })
 
       const unlistenAudioError = await listen<string>(
@@ -226,33 +214,44 @@ function App() {
       )
 
       // HTTPリクエストのイベントリスナー
+      log('Setting up http-tts-request listener')
       const unlistenHttpRequest = await listen<{ text: string; priority?: string }>(
         'http-tts-request',
-        (event) => {
+        async (event) => {
+          window.console.log('[App] Received HTTP TTS request:', event.payload)
           log('Received HTTP TTS request:', event.payload)
-          const priority = event.payload.priority === 'high' 
-            ? QueuePriority.HIGH 
-            : event.payload.priority === 'low' 
-            ? QueuePriority.LOW 
-            : QueuePriority.NORMAL
           
-          queueStore.addItem(event.payload.text, priority)
-          queueStore.saveQueue()
+          // 履歴に追加
+          const historyItem = historyStore.addItem(event.payload.text)
+          window.console.log('[App] Added to history:', historyItem)
+          window.console.log('[App] Has API key:', hasApiKeyRef.current)
           
-          // 再生中でなければ自動再生を開始
-          if (!isPlaying) {
-            const nextItem = queueStore.getNextItem()
-            if (nextItem) {
-              currentQueueItemRef.current = nextItem
-              queueStore.updateStatus(nextItem.id, 'processing')
-              playText(nextItem.text).catch(() => {
-                queueStore.updateStatus(nextItem.id, 'error')
-                currentQueueItemRef.current = null
-              })
+          // 即座に読み上げ開始（現在の読み上げがあれば中断）
+          try {
+            // 現在再生中の音声を停止
+            window.console.log('[App] Stopping current playback...')
+            await tts.stopSpeech()
+            if (audioPlayerRef.current) {
+              audioPlayerRef.current.stop()
             }
+            setIsPlaying(false)
+            setIsPaused(false)
+            
+            // 少し待機してから新しい読み上げを開始
+            await new Promise(resolve => setTimeout(resolve, 100))
+            
+            window.console.log('[App] Starting new playback...')
+            await playText(event.payload.text)
+            window.console.log('[App] Playback completed')
+            historyStore.updateStatus(historyItem.id, 'completed')
+          } catch (err) {
+            window.console.error('[App] Playback error:', err)
+            error('Playback error:', err)
+            historyStore.updateStatus(historyItem.id, 'error')
           }
         },
       )
+      log('http-tts-request listener registered successfully')
 
       // クリーンアップ
       return () => {
@@ -319,10 +318,22 @@ function App() {
         </button>
         <button
           className="btn btn-secondary"
-          onClick={() => setShowQueue(!showQueue)}
+          onClick={() => setShowHistory(!showHistory)}
         >
-          📋 キュー (
-          {queueStore.items.filter((i) => i.status === 'pending').length})
+          📋 履歴 ({historyStore.items.length})
+        </button>
+        <button
+          className="btn btn-secondary"
+          onClick={async () => {
+            try {
+              const result = await invoke('test_event_emit')
+              log('Test event result:', result)
+            } catch (err) {
+              error('Test event error:', err)
+            }
+          }}
+        >
+          🧪 テスト
         </button>
       </div>
 
@@ -462,35 +473,27 @@ function App() {
         </div>
       )}
 
-      {showQueue && (
-        <QueuePanel
-          store={queueStore.store}
-          onAdd={(text) => {
-            queueStore.addItem(text, QueuePriority.NORMAL)
-            queueStore.saveQueue()
+      {showHistory && (
+        <HistoryPanel
+          items={historyStore.items}
+          onClear={() => {
+            if (window.confirm('すべての履歴を削除しますか？')) {
+              historyStore.clearHistory()
+            }
           }}
           onRemove={(id) => {
-            queueStore.removeItem(id)
-            queueStore.saveQueue()
+            historyStore.removeItem(id)
           }}
-          onClear={() => {
-            if (window.confirm('すべてのキューアイテムを削除しますか？')) {
-              queueStore.clear()
-              queueStore.saveQueue()
-            }
-          }}
-          onPlayItem={async (item) => {
+          onReplay={async (item) => {
             if (isPlaying) {
-              window.alert('現在再生中です。停止してから再生してください。')
-              return
+              await handleStop()
             }
-            currentQueueItemRef.current = item
-            queueStore.updateStatus(item.id, 'processing')
+            const newItem = historyStore.addItem(item.text)
             try {
               await playText(item.text)
-            } catch {
-              queueStore.updateStatus(item.id, 'error')
-              currentQueueItemRef.current = null
+              historyStore.updateStatus(newItem.id, 'completed')
+            } catch (err) {
+              historyStore.updateStatus(newItem.id, 'error')
             }
           }}
         />

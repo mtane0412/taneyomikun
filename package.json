@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "dev": "vite --port 3000",
+    "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
@@ -47,5 +47,8 @@
     "typescript": "^5.9.2",
     "vite": "^7.0.6",
     "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "zustand": "^5.0.7"
   }
 }

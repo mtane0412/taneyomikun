@@ -23,9 +23,10 @@ use commands::http::{
     update_http_config,
     start_http_server
 };
-use tauri::Manager;
+use commands::test::test_event_emit;
 use std::sync::Arc;
 use tokio::sync::RwLock;
+use tauri::Manager;
 
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -51,26 +52,32 @@ pub fn run() {
             stop_speech,
             get_http_config,
             update_http_config,
-            start_http_server
+            start_http_server,
+            test_event_emit
         ])
         .setup(|app| {
             log::info!("[Main] Tauri app setup complete");
+            
+            // 開発環境で開発者ツールを自動で開く
+            #[cfg(debug_assertions)]
+            {
+                let window = app.get_webview_window("main").unwrap();
+                window.open_devtools();
+            }
             
             // HTTPサーバーを自動起動
             let app_handle = app.handle().clone();
             
             tauri::async_runtime::spawn(async move {
-                tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+                tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
                 log::info!("[Main] Starting HTTP server...");
                 
                 // HTTP server will be started via the default configuration
                 let http_config = http::HttpServerConfig::default();
-                let http_state = http::HttpServerState {
-                    config: Arc::new(RwLock::new(http_config)),
-                };
+                let config = Arc::new(RwLock::new(http_config));
                 
                 let server = http::HttpServer::new(
-                    Arc::clone(&http_state.config),
+                    config,
                     app_handle.clone()
                 );
                 
