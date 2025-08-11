@@ -43,6 +43,14 @@ function App() {
     hasApiKeyRef.current = hasApiKey
   }, [hasApiKey])
 
+  // APIキーの存在を再確認する関数
+  const checkApiKeyStatus = async () => {
+    log('Checking API key status...')
+    const exists = await tts.checkApiKey()
+    log('API key exists:', exists)
+    setHasApiKey(exists)
+  }
+
   const playText = async (textToPlay: string, overrideLanguage?: string) => {
     if (!hasApiKeyRef.current) {
       window.alert('APIキーを設定してください')
@@ -309,6 +317,7 @@ function App() {
       <SettingsModal
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}
+        onApiKeyUpdated={checkApiKeyStatus}
       />
 
       <HistoryPanel

@@ -10,6 +10,7 @@ import * as tts from '../utils/tts'
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
+  onApiKeyUpdated?: () => void
 }
 
 const log = (...args: unknown[]) =>
@@ -17,7 +18,11 @@ const log = (...args: unknown[]) =>
 const error = (...args: unknown[]) =>
   window.console.error('[SettingsModal]', ...args)
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export function SettingsModal({
+  isOpen,
+  onClose,
+  onApiKeyUpdated,
+}: SettingsModalProps) {
   const [apiKey, setApiKey] = useState('')
   const [hasApiKey, setHasApiKey] = useState(false)
   const [httpPort, setHttpPort] = useState(50080)
@@ -54,6 +59,11 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setHasApiKey(true)
       setApiKey('') // セキュリティのためクリア
       window.alert('APIキーを保存しました')
+
+      // 親コンポーネントに通知
+      if (onApiKeyUpdated) {
+        onApiKeyUpdated()
+      }
     } catch (err) {
       error('APIキー保存エラー:', err)
       window.alert(`APIキーの保存に失敗しました: ${err}`)
