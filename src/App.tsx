@@ -5,7 +5,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { listen } from '@tauri-apps/api/event'
 import * as tts from './utils/tts'
-import { AudioPlayer } from './utils/audioPlayer'
+// Rust側で音声再生を行うため、AudioPlayerは使用しない
+// import { AudioPlayer } from './utils/audioPlayer'
 import { HistoryPanel } from './components/HistoryPanel'
 import { useHistoryStore } from './stores/historyStore'
 import { useLanguageStore } from './stores/languageStore'
@@ -29,7 +30,8 @@ const error = (...args: unknown[]) => window.console.error('[App]', ...args)
 function App() {
   const [text, setText] = useState('')
   const [isPlaying, setIsPlaying] = useState(false)
-  const audioPlayerRef = useRef<AudioPlayer | null>(null)
+  // Rust側で音声再生を行うため、AudioPlayerは使用しない
+  // const audioPlayerRef = useRef<AudioPlayer | null>(null)
   const [volume, setVolume] = useState(50)
   const [showSettings, setShowSettings] = useState(false)
   const [hasApiKey, setHasApiKey] = useState(false)
@@ -81,13 +83,8 @@ function App() {
       window.console.log('[App] TTS config:', config)
       await tts.updateTTSConfig(config)
 
-      // 音声プレイヤーを初期化
-      if (!audioPlayerRef.current) {
-        log('Creating new AudioPlayer')
-        audioPlayerRef.current = new AudioPlayer()
-      }
-      audioPlayerRef.current.setVolume(volume / 100)
-      log('AudioPlayer ready, volume set to:', volume / 100)
+      // Rust側で音声再生を行うため、AudioPlayerの初期化は不要
+      log('Using Rust audio player, volume set to:', volume / 100)
 
       log('Starting TTS synthesis')
       await tts.synthesizeSpeech(textToPlay)
@@ -123,9 +120,7 @@ function App() {
     log('handleStop called')
     try {
       await tts.stopSpeech()
-      if (audioPlayerRef.current) {
-        audioPlayerRef.current.stop()
-      }
+      // Rust側で音声再生を停止
       setIsPlaying(false)
       log('Playback stopped')
     } catch (err) {
@@ -146,18 +141,14 @@ function App() {
     // 音声データのイベントリスナーを設定
     log('Setting up event listeners')
     const setupListeners = async () => {
+      // Rust側で音声再生を行うため、audio-chunkイベントは使用しない
       const unlistenAudioChunk = await listen<string>(
         'audio-chunk',
         (event) => {
           log(
-            'Received audio-chunk event, payload length:',
+            'Received audio-chunk event (ignored, using Rust audio player), payload length:',
             event.payload.length,
           )
-          if (audioPlayerRef.current) {
-            audioPlayerRef.current.appendAudioChunk(event.payload)
-          } else {
-            log('No audio player available for chunk')
-          }
         },
       )
 
@@ -207,9 +198,6 @@ function App() {
           // 現在再生中の音声を停止
           window.console.log('[App] Stopping current playback...')
           await tts.stopSpeech()
-          if (audioPlayerRef.current) {
-            audioPlayerRef.current.stop()
-          }
           setIsPlaying(false)
 
           // 少し待機してから新しい読み上げを開始
@@ -243,9 +231,7 @@ function App() {
         unlistenAudioComplete()
         unlistenAudioError()
         unlistenHttpRequest()
-        if (audioPlayerRef.current) {
-          audioPlayerRef.current.close()
-        }
+        // Rust側での音声再生を使用するため、AudioPlayerのクリーンアップは不要
       }
     }
 

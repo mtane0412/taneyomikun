@@ -6,6 +6,7 @@
 mod commands;
 mod tts;
 mod http;
+mod audio;
 
 use commands::tts::{
     TTSState, 

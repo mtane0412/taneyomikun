@@ -1,6 +1,6 @@
 [package]
 name = "Taneyomi-kun"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 
 [build-dependencies]
@@ -24,6 +24,8 @@ env_logger = "0.11"
 axum = { version = "0.7", features = ["tokio"] }
 tower = "0.5"
 tower-http = { version = "0.6", features = ["cors"] }
+cpal = "0.15.2"
+crossbeam-channel = "0.5"
 
 [target."cfg(not(any(target_os = \"android\", target_os = \"ios\")))".dependencies]
 tauri-plugin-autostart = "2"

@@ -9,6 +9,7 @@ use crate::tts::{
     storage::ApiKeyStorage,
     TTSConfig
 };
+use crate::audio::manager::AudioManager;
 use tauri::{AppHandle, Emitter, State};
 use tokio::sync::{Mutex, mpsc, oneshot};
 use std::sync::Arc;
@@ -19,6 +20,7 @@ pub struct TTSState {
     pub is_synthesizing: Arc<Mutex<bool>>,
     pub api_key: Arc<Mutex<Option<String>>>,
     pub cancel_tx: Arc<Mutex<Option<oneshot::Sender<()>>>>,
+    pub audio_manager: Arc<Mutex<Option<AudioManager>>>,
 }
 
 impl Default for TTSState {
@@ -28,6 +30,7 @@ impl Default for TTSState {
             is_synthesizing: Arc::new(Mutex::new(false)),
             api_key: Arc::new(Mutex::new(None)),
             cancel_tx: Arc::new(Mutex::new(None)),
+            audio_manager: Arc::new(Mutex::new(None)),
         }
     }
 }
@@ -120,6 +123,11 @@ pub async fn update_tts_config(
     }
     if let Some(volume) = volume {
         config.volume = volume.clamp(0.0, 1.0);
+        // 再生中の音声の音量も更新
+        let audio_manager = state.audio_manager.lock().await;
+        if let Some(manager) = audio_manager.as_ref() {
+            let _ = manager.set_volume(config.volume);
+        }
     }
     if let Some(language) = language {
         config.language = language;
@@ -164,27 +172,53 @@ pub async fn synthesize_speech(
     // 音声データ受信用のチャンネルを作成
     let (audio_tx, mut audio_rx) = mpsc::channel::<Vec<u8>>(100);
     
-    // フロントエンドへの音声データ送信タスク
+    // AudioManagerを作成・初期化
+    let manager = AudioManager::new().map_err(|e| format!("音声マネージャーの初期化に失敗しました: {}", e))?;
+    manager.set_volume(config.volume).map_err(|e| format!("音量設定に失敗しました: {}", e))?;
+    
+    // 状態を更新
+    let mut audio_manager_lock = state.audio_manager.lock().await;
+    *audio_manager_lock = Some(manager);
+    drop(audio_manager_lock);
+    
+    // PCMデータ変換とRust側での再生タスク
     let app_clone = app.clone();
+    let audio_manager_state = state.audio_manager.clone();
     tokio::spawn(async move {
         let mut chunk_count = 0;
         while let Some(audio_data) = audio_rx.recv().await {
             chunk_count += 1;
-            eprintln!("Sending audio chunk #{} to frontend ({} bytes)", chunk_count, audio_data.len());
-            // Base64エンコードしてフロントエンドに送信
-            let base64_audio = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &audio_data);
-            if let Err(e) = app_clone.emit("audio-chunk", base64_audio) {
-                eprintln!("音声データの送信に失敗しました: {}", e);
+            eprintln!("Processing audio chunk #{} ({} bytes)", chunk_count, audio_data.len());
+            
+            // PCM f32le形式のバイトデータをf32配列に変換
+            let mut f32_samples = Vec::with_capacity(audio_data.len() / 4);
+            for chunk in audio_data.chunks_exact(4) {
+                if let Ok(bytes) = <[u8; 4]>::try_from(chunk) {
+                    let sample = f32::from_le_bytes(bytes);
+                    f32_samples.push(sample);
+                }
+            }
+            
+            // Rust側のプレイヤーに送信
+            let manager_lock = audio_manager_state.lock().await;
+            if let Some(manager) = manager_lock.as_ref() {
+                if let Err(e) = manager.play_audio(f32_samples) {
+                    eprintln!("音声データの送信に失敗しました: {}", e);
+                }
             }
         }
         
-        eprintln!("All audio chunks sent. Emitting audio-complete event");
+        eprintln!("All audio chunks processed. Emitting audio-complete event");
         // 合成完了を通知
         let _ = app_clone.emit("audio-complete", ());
         
         // 合成完了フラグをリセット
         let mut is_synthesizing = is_synthesizing_clone.lock().await;
         *is_synthesizing = false;
+        
+        // オーディオマネージャーをクリーンアップ
+        let mut audio_manager_lock = audio_manager_state.lock().await;
+        *audio_manager_lock = None;
     });
     
     // APIキーを取得
@@ -248,6 +282,14 @@ pub async fn stop_speech(state: State<'_, TTSState>) -> Result<(), String> {
         let _ = sender.send(());
         eprintln!("Cancel signal sent");
     }
+    
+    // 音声再生を停止
+    let mut audio_manager = state.audio_manager.lock().await;
+    if let Some(manager) = audio_manager.as_ref() {
+        let _ = manager.stop();
+        eprintln!("Audio playback stopped");
+    }
+    *audio_manager = None;
     
     let mut is_synthesizing = state.is_synthesizing.lock().await;
     *is_synthesizing = false;
